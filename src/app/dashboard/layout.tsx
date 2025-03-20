@@ -16,10 +16,7 @@ export default function DashboardLayout({
         <SidebarProvider>
           <AppSidebar />
           <SidebarTrigger />
-          <main className="flex-1 p-6">
-            <h1>soy el dashboard layout</h1>
-            {children}
-          </main>
+          {children}
         </SidebarProvider>
       </SessionProvider>
     </div>

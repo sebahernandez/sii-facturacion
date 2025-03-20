@@ -2,6 +2,7 @@
 
 import { PackageSearch, Home, Inbox, Settings, UsersRound } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useSession, signOut } from "next-auth/react";
 
 import {
   Sidebar,
@@ -17,12 +18,6 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { ModeToggle } from "./mode-toggle";
-
-const user = {
-  name: "Juan Perez",
-  email: "j@example.com",
-  avatar: "https://randomuser.me/api/portraits/thumb/men/75.jpg",
-};
 
 // Menu items.
 const items = [
@@ -54,6 +49,9 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { data: session } = useSession();
+  const user = session?.user;
+
   return (
     <Sidebar>
       <SidebarHeader>Facturapp</SidebarHeader>
@@ -79,7 +77,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <ModeToggle />
-        <NavUser user={user} />
+        {user && <NavUser user={user} signout={signOut} />}
       </SidebarFooter>
     </Sidebar>
   );

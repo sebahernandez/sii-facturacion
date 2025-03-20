@@ -43,7 +43,7 @@ export function LoginForm() {
       toast.error("Usuario o contraseña incorrectos");
     } else {
       toast.success("Inicio de sesión exitoso");
-      router.push("/dashboard"); // Redirigir al dashboard después de iniciar sesión
+      router.push("/dashboard");
     }
     console.log(values);
   }
@@ -86,7 +86,7 @@ export function LoginForm() {
         />
 
         {/* Botón de enviar */}
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full cursor-pointer">
           Iniciar Sesión
         </Button>
       </form>
