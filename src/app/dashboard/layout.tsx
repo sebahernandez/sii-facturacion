@@ -2,8 +2,8 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-
-import { SessionProvider } from "@/components/SessionProvider";
+import { SessionProvider as Provider } from "next-auth/react";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function DashboardLayout({
   children,
@@ -12,13 +12,20 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex">
-      <SessionProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarTrigger />
-          {children}
-        </SidebarProvider>
-      </SessionProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <Provider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarTrigger />
+            {children}
+          </SidebarProvider>
+        </Provider>
+      </ThemeProvider>
     </div>
   );
 }

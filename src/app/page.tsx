@@ -1,9 +1,11 @@
 import React from "react";
 import { Receipt, Shield, Cloud, CheckCircle2, ArrowRight } from "lucide-react";
-import { metadata } from "@/app/dashboard/metadata";
 import Link from "next/link";
 
-export { metadata };
+export const metadata = {
+  title: "Facturación Electrónica",
+  description: "Plataforma de facturación electrónica simple y eficiente",
+};
 
 export default function HomePage() {
   return (

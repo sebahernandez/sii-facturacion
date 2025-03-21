@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { formSchema } from "@/lib/zod";
+import { loginSchema } from "@/lib/zod";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,8 @@ export function LoginForm() {
   const router = useRouter();
 
   // Definición del formulario
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -32,7 +32,7 @@ export function LoginForm() {
   });
 
   // Manejar el inicio de sesión
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
     const result = await signIn("credentials", {
       email: values.email,
       password: values.password,
