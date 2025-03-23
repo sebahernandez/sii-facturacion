@@ -14,10 +14,37 @@ datasource db {
 }
 
 model User {
-  id        String  @id @default(uuid())
-  name      String?
-  email     String  @unique
-  password  String?
-  image     String?
-  createdAt DateTime @default(now())
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String?
+  email       String     @unique
+  password    String?
+  rutEmpresa  String?
+  razonSocial String?
+  giro        String?
+  direccion   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  products    Producto[] // Relación uno a muchos con Producto
 }
+
+model Producto {
+  id             Int       @id @default(autoincrement())
+  codigo         String
+  descripcion    String
+  cantidad       Int
+  unidadMedida   String
+  precioUnitario Decimal
+  descuento      Decimal   @default(0.00)
+  montoNeto      Decimal
+  iva            Decimal   @default(12.00)
+  montoTotal     Decimal
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user_id        String    @db.Uuid // Clave foránea hacia User
+  user           User      @relation(fields: [user_id], references: [id]) // Relación inversa
+}
+
+
+//todo: 1. Crear modelo de clientes
+//todo: 2. Crear modelo de productos
+//todo: 3. Crear modelo de facturas

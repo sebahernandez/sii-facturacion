@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { obtenerToken, guardarConfiguracion } from "@/lib/api";
+import { obtenerToken, guardarConfiguracion } from "@/lib/api-sii";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
