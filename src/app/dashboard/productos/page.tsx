@@ -50,10 +50,14 @@ export default function ProductosPage() {
     useState<Producto | null>(null);
 
   const fetchProductos = async () => {
-    const res = await fetch("/api/productos");
-    if (!res.ok) return toast.error("Error al obtener productos");
-    const data = await res.json();
-    setProductos(data);
+    try {
+      const res = await fetch("/api/productos");
+      const data = await res.json();
+      setProductos(data);
+    } catch (e) {
+      console.log(e);
+      return toast.error("Error al obtener productos");
+    }
   };
 
   useEffect(() => {

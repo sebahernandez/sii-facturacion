@@ -1,12 +1,12 @@
 "use client";
-
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { loginSchema } from "@/lib/zod";
 import { toast } from "sonner";
-
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 
 export function LoginForm() {
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Definición del formulario
@@ -33,25 +34,31 @@ export function LoginForm() {
 
   // Manejar el inicio de sesión
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    const result = await signIn("credentials", {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    });
+    setIsLoading(true);
 
-    if (result?.error) {
-      toast.error("Usuario o contraseña incorrectos");
-    } else {
-      toast.success("Inicio de sesión exitoso");
-      router.push("/dashboard");
+    try {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error("Usuario o contraseña incorrectos");
+      } else {
+        toast.success("Inicio de sesión exitoso");
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error al iniciar sesión");
+    } finally {
+      setIsLoading(false);
     }
-    console.log(values);
   }
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Campo Email */}
         <FormField
           control={form.control}
           name="email"
@@ -69,8 +76,6 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-
-        {/* Campo Password */}
         <FormField
           control={form.control}
           name="password"
@@ -85,7 +90,7 @@ export function LoginForm() {
           )}
         />
 
-        {/* Botón de enviar */}
+        {isLoading && <Progress value={100} className="w-[60%]" />}
         <Button type="submit" className="w-full cursor-pointer">
           Iniciar Sesión
         </Button>
