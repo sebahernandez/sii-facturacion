@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
 import { ImPlus } from "react-icons/im";
 import { MdDelete } from "react-icons/md";
 import { FiEdit3 } from "react-icons/fi";
@@ -48,15 +49,19 @@ export default function ProductosPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<Producto | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchProductos = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch("/api/productos");
       const data = await res.json();
       setProductos(data);
     } catch (e) {
       console.log(e);
       return toast.error("Error al obtener productos");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -140,42 +145,52 @@ export default function ProductosPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {productos.map((producto) => (
-            <TableRow key={producto.id}>
-              <TableCell>{producto.codigo}</TableCell>
-              <TableCell>{producto.descripcion}</TableCell>
-              <TableCell>{producto.cantidad}</TableCell>
-              <TableCell>{producto.unidadMedida}</TableCell>
-              <TableCell>${producto.precioUnitario.toLocaleString()}</TableCell>
-              <TableCell>${producto.descuento.toLocaleString()}</TableCell>
-              <TableCell>${producto.montoNeto.toLocaleString()}</TableCell>
-              <TableCell>${producto.iva.toLocaleString()}</TableCell>
-              <TableCell>
-                $
-                {producto.montoTotal.toLocaleString("es-CL", {
-                  minimumFractionDigits: 0,
-                })}
-              </TableCell>
-              <TableCell className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditar(producto)}
-                  className="cursor-pointer"
-                >
-                  <FiEdit3 /> Editar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleEliminar(producto.id)}
-                  className="cursor-pointer"
-                >
-                  <MdDelete /> Eliminar
-                </Button>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={10} className="h-24 text-center">
+                <Progress value={100} className="w-[60%]" />
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            productos.map((producto) => (
+              <TableRow key={producto.id}>
+                <TableCell>{producto.codigo}</TableCell>
+                <TableCell>{producto.descripcion}</TableCell>
+                <TableCell>{producto.cantidad}</TableCell>
+                <TableCell>{producto.unidadMedida}</TableCell>
+                <TableCell>
+                  ${producto.precioUnitario.toLocaleString()}
+                </TableCell>
+                <TableCell>${producto.descuento.toLocaleString()}</TableCell>
+                <TableCell>${producto.montoNeto.toLocaleString()}</TableCell>
+                <TableCell>${producto.iva.toLocaleString()}</TableCell>
+                <TableCell>
+                  $
+                  {producto.montoTotal.toLocaleString("es-CL", {
+                    minimumFractionDigits: 0,
+                  })}
+                </TableCell>
+                <TableCell className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEditar(producto)}
+                    className="cursor-pointer"
+                  >
+                    <FiEdit3 /> Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleEliminar(producto.id)}
+                    className="cursor-pointer"
+                  >
+                    <MdDelete /> Eliminar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

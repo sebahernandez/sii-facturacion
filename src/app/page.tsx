@@ -16,7 +16,9 @@ export default function HomePage() {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
               Facturación Electrónica
-              <span className="text-blue-600 block">Simple y Eficiente</span>
+              <span className="text-blue-600 block">
+                Simple,Eficiente y GRATIS!
+              </span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Simplifica tu proceso de facturación con nuestra plataforma
@@ -25,13 +27,16 @@ export default function HomePage() {
             <div className="flex justify-center gap-4">
               <Link
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-                href="/auth/login"
+                href="/auth/register"
               >
-                Comenzar Ahora
+                Registrar ahora
               </Link>
-              <button className="border border-gray-300 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition">
-                Solicitar Demo
-              </button>
+              <Link
+                href="/auth/login"
+                className="border border-gray-300 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+              >
+                Iniciar Sesión
+              </Link>
             </div>
           </div>
         </div>
@@ -162,9 +167,12 @@ export default function HomePage() {
             Únete a miles de empresas que ya confían en nuestra plataforma para
             su facturación electrónica
           </p>
-          <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition inline-flex items-center gap-2">
+          <Link
+            href="/auth/register"
+            className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition inline-flex items-center gap-2"
+          >
             Empezar Ahora <ArrowRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>
