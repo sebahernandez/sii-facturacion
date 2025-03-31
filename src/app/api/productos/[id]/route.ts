@@ -3,39 +3,28 @@ import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-// PUT: Editar producto
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: Promise<{ params: { id: string } }>
 ) {
+  const { params } = await context;
+  const id = parseInt(params.id);
+  if (isNaN(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   const data = await req.json();
+  console.log("DATA RECIBIDA:", data);
 
   try {
     const actualizado = await prisma.producto.update({
-      where: { id: parseInt(params.id) },
-      data,
+      where: { id },
+      data, // asegúrate que solo tenga los campos válidos
     });
 
     return NextResponse.json(actualizado);
   } catch (error) {
     console.error("Error al actualizar producto:", error);
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
-  }
-}
-
-// DELETE: Eliminar producto
-export async function DELETE(
-  _: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await prisma.producto.delete({
-      where: { id: parseInt(params.id) },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error al eliminar producto:", error);
-    return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
   }
 }

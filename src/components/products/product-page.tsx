@@ -7,13 +7,18 @@ import { ImPlus } from "react-icons/im";
 import ProductoCreateModal from "@/components/modals/create-product.modal";
 import ProductoEditModal from "@/components/modals/edit-product-modal";
 import { Producto } from "@/types/producto";
-import useProductStore from "@/hooks/useProductStore";
+import useProductStore from "@/store/products.store";
 import { DataTable } from "@/components/products/data-table";
 import { DeleteAlertDialog } from "@/components/products/alert-delete";
 
 export default function ProductosPage() {
-  const { productos, fetchProducts, eliminarProducto, resetProductos } =
-    useProductStore();
+  const {
+    productos,
+    fetchProducts,
+    eliminarProducto,
+    editarProducto,
+    resetProductos,
+  } = useProductStore();
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -77,6 +82,7 @@ export default function ProductosPage() {
             resetProductos();
             await fetchProducts();
           }}
+          editarProducto={editarProducto}
         />
       )}
     </div>

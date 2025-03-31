@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 interface Producto {
   id: number;
@@ -30,6 +29,7 @@ interface Props {
   onClose: () => void;
   producto: Producto;
   onSuccess: () => void;
+  editarProducto: (producto: Producto) => Promise<boolean>;
 }
 
 export default function ProductoEditModal({
@@ -37,6 +37,7 @@ export default function ProductoEditModal({
   onClose,
   producto,
   onSuccess,
+  editarProducto,
 }: Props) {
   const [form, setForm] = useState<Producto>(producto);
 
@@ -62,17 +63,14 @@ export default function ProductoEditModal({
   };
 
   const handleSubmit = async () => {
-    const res = await fetch(`/api/productos/${producto.id}`, {
-      method: "PUT",
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      toast.success("Producto actualizado");
-      onSuccess();
-      onClose();
-    } else {
-      toast.error("Error al actualizar producto");
+    if (editarProducto) {
+      const success = await editarProducto(form);
+      if (success) {
+        onClose();
+        onSuccess();
+      } else {
+        alert("Hubo un error al guardar el producto");
+      }
     }
   };
 

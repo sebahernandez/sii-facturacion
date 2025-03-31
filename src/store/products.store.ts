@@ -5,18 +5,21 @@ import type { Producto } from "@/types/producto";
 import { toast } from "sonner";
 
 interface ProductStore {
-  productos: Producto[] | null;
-  isLoading: boolean;
-  fetchProducts: (signal?: AbortSignal) => Promise<void>;
-  setProductos: (productos: Producto[]) => void;
-  resetProductos: () => void;
-  eliminarProducto: (id: number, nombre: string) => Promise<boolean>;
+  productos: Producto[] | null; // Array de productos o null
+  isLoading: boolean; // Indica si se está cargando
+  fetchProducts: (signal?: AbortSignal) => Promise<void>; // Función para cargar productos
+  setProductos: (productos: Producto[]) => void; // Función para establecer productos
+  resetProductos: () => void; // Función para resetear productos
+  eliminarProducto: (id: number, nombre: string) => Promise<boolean>; // Función para eliminar un producto
+  editarProducto: (producto: Producto) => Promise<boolean>;
 }
 
+// Implementación del store
 const useProductStore = create<ProductStore>((set, get) => ({
-  productos: null,
-  isLoading: false,
+  productos: null, // Array de productos o null
+  isLoading: false, // Indica si se está cargando
 
+  // Función para cargar productos
   fetchProducts: async (signal?: AbortSignal) => {
     const { productos, isLoading } = get();
     if (productos || isLoading) return;
@@ -36,6 +39,7 @@ const useProductStore = create<ProductStore>((set, get) => ({
     }
   },
 
+  // Función para eliminar un producto
   eliminarProducto: async (id: number, nombre: string) => {
     try {
       const res = await fetch(`/api/productos/${id}`, { method: "DELETE" });
@@ -53,7 +57,32 @@ const useProductStore = create<ProductStore>((set, get) => ({
     }
   },
 
+  editarProducto: async (producto) => {
+    const { id, ...rest } = producto;
+    try {
+      const res = await fetch(`/api/productos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(rest),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) throw new Error("Error al editar");
+      const { resetProductos, fetchProducts } = get();
+      resetProductos();
+      await fetchProducts();
+      toast.success(`Producto ${producto.descripcion} editado exitosamente`);
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al editar producto");
+      return false;
+    }
+  },
+
+  // Función para establecer productos
   setProductos: (productos: Producto[]) => set({ productos }),
+  // Función para resetear productos
   resetProductos: () => set({ productos: null }),
 }));
 
