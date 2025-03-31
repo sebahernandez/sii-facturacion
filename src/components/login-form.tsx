@@ -20,10 +20,9 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const router = useRouter();
 
-  // Definición del formulario
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -32,10 +31,8 @@ export function LoginForm() {
     },
   });
 
-  // Manejar el inicio de sesión
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    setIsLoading(true);
-
+    setProgress(10);
     try {
       const result = await signIn("credentials", {
         email: values.email,
@@ -45,17 +42,19 @@ export function LoginForm() {
 
       if (result?.error) {
         toast.error("Usuario o contraseña incorrectos");
+        setProgress(0);
       } else {
+        setProgress(100);
         toast.success("Inicio de sesión exitoso");
         router.push("/dashboard");
       }
     } catch (error) {
       console.log(error);
       toast.error("Error al iniciar sesión");
-    } finally {
-      setIsLoading(false);
+      setProgress(0);
     }
   }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -76,6 +75,7 @@ export function LoginForm() {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="password"
@@ -90,7 +90,7 @@ export function LoginForm() {
           )}
         />
 
-        {isLoading && <Progress value={100} className="w-[60%]" />}
+        {progress > 0 && <Progress value={progress} className="w-[100%]" />}
         <Button type="submit" className="w-full cursor-pointer">
           Iniciar Sesión
         </Button>

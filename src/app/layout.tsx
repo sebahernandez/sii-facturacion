@@ -1,7 +1,9 @@
-"use client";
-
 import "./globals.css";
-import { Toaster } from "sonner";
+
+export const metadata = {
+  title: "Facturación Electrónica",
+  description: "Plataforma de facturación electrónica simple y eficiente",
+};
 
 export default function RootLayout({
   children,
@@ -9,11 +11,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning={true}>
-      <body>
-        <Toaster richColors />
-        {children}
-      </body>
+    <html lang="es" suppressHydrationWarning>
+      <body>{children}</body>
     </html>
   );
 }

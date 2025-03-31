@@ -1,5 +1,5 @@
 "use client";
-
+import { Toaster } from "sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SessionProvider as Provider } from "next-auth/react";
@@ -12,6 +12,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex">
+      <Toaster richColors />
       <ThemeProvider
         attribute="class"
         defaultTheme="system"

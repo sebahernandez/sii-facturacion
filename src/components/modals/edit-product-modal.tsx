@@ -85,7 +85,7 @@ export default function ProductoEditModal({
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div>
-            <Label>Código</Label>
+            <Label className="py-2">Código</Label>
             <Input
               value={form.codigo}
               onChange={(e) => handleChange("codigo", e.target.value)}
@@ -93,7 +93,7 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label>Unidad de Medida</Label>
+            <Label className="py-2">Unidad de Medida</Label>
             <Input
               value={form.unidadMedida}
               onChange={(e) => handleChange("unidadMedida", e.target.value)}
@@ -101,7 +101,7 @@ export default function ProductoEditModal({
           </div>
 
           <div className="col-span-2">
-            <Label>Descripción</Label>
+            <Label className="py-2">Descripción</Label>
             <Input
               value={form.descripcion}
               onChange={(e) => handleChange("descripcion", e.target.value)}
@@ -109,7 +109,7 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label>Cantidad</Label>
+            <Label className="py-2">Cantidad</Label>
             <Input
               type="number"
               value={form.cantidad}
@@ -120,7 +120,7 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label>Precio Unitario</Label>
+            <Label className="py-2">Precio Unitario</Label>
             <Input
               type="number"
               value={form.precioUnitario}
@@ -131,7 +131,7 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label>Descuento</Label>
+            <Label className="py-2">Descuento</Label>
             <Input
               type="number"
               value={form.descuento}
@@ -142,17 +142,17 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label>IVA</Label>
+            <Label className="py-2">IVA</Label>
             <Input type="number" value={form.iva} disabled />
           </div>
 
           <div>
-            <Label>Monto Neto</Label>
+            <Label className="py-2">Monto Neto</Label>
             <Input type="number" value={form.montoNeto} disabled />
           </div>
 
           <div>
-            <Label>Total</Label>
+            <Label className="py-2">Total</Label>
             <Input type="number" value={form.montoTotal} disabled />
           </div>
         </div>

@@ -9,13 +9,13 @@ import { Session } from "next-auth";
 
 const prisma = new PrismaClient();
 
-// 📌 Limita los intentos de login (5 intentos por minuto por email)
+//Limita los intentos de login (5 intentos por minuto por email)
 const rateLimiter = new RateLimiterMemory({
   points: 5,
   duration: 60,
 });
 
-// 📌 Tipado Extendido de NextAuth
+// Tipado Extendido de NextAuth
 declare module "next-auth" {
   interface Session {
     user: {
@@ -32,7 +32,7 @@ declare module "next-auth" {
   }
 }
 
-// 📌 Configuración de NextAuth
+// Configuración de NextAuth
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Este usuario no tiene una contraseña establecida");
         }
 
-        // 📌 Verificar contraseña con bcrypt
+        //  Verificar contraseña con bcrypt
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password

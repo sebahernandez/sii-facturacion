@@ -34,6 +34,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="flex gap-2">
         <Button
+          className="cursor-pointer"
           size="sm"
           variant="outline"
           onClick={() => onEditar(row.original)}
@@ -41,6 +42,7 @@ export const columns = (
           <FiEdit3 /> Editar
         </Button>
         <Button
+          className="cursor-pointer"
           size="sm"
           variant="destructive"
           onClick={() => onEliminar(row.original.id)}

@@ -6,7 +6,6 @@ export const metadata = {
   title: "Facturación Electrónica",
   description: "Plataforma de facturación electrónica simple y eficiente",
 };
-
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">

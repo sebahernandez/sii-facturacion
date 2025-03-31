@@ -1,18 +1,19 @@
 // ProductosPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ImPlus } from "react-icons/im";
 import ProductoCreateModal from "@/components/modals/create-product.modal";
 import ProductoEditModal from "@/components/modals/edit-product-modal";
 import { Producto } from "@/types/producto";
-import { useProductos } from "@/components/products/useProducts";
+import useProductStore from "@/hooks/useProductStore";
 import { DataTable } from "@/components/products/data-table";
 import { DeleteAlertDialog } from "@/components/products/alert-delete";
 
 export default function ProductosPage() {
-  const { productos, eliminarProducto, recargarProductos } = useProductos();
+  const { productos, fetchProducts, eliminarProducto, resetProductos } =
+    useProductStore();
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -20,26 +21,37 @@ export default function ProductosPage() {
   const [productoSeleccionado, setProductoSeleccionado] =
     useState<Producto | null>(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchProducts(controller.signal);
+    return () => controller.abort();
+  }, [fetchProducts]);
+
   return (
     <div className="container mx-auto mt-10">
       <DeleteAlertDialog
         open={!!deleteId}
         onOpenChange={() => setDeleteId(null)}
         onConfirm={async () => {
-          if (deleteId) await eliminarProducto(deleteId);
-          setDeleteId(null);
+          if (deleteId) {
+            const productoAEliminar = productos?.find((p) => p.id === deleteId);
+            if (productoAEliminar) {
+              await eliminarProducto(deleteId, productoAEliminar.descripcion);
+            }
+            setDeleteId(null);
+          }
         }}
       />
 
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Productos</h1>
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button className="cursor-pointer" onClick={() => setCreateOpen(true)}>
           <ImPlus /> Nuevo Producto
         </Button>
       </div>
 
       <DataTable
-        data={productos}
+        data={productos ?? []}
         onEditar={(producto) => {
           setProductoSeleccionado(producto);
           setEditOpen(true);
@@ -50,7 +62,10 @@ export default function ProductosPage() {
       <ProductoCreateModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onSuccess={recargarProductos}
+        onSuccess={async () => {
+          resetProductos();
+          await fetchProducts();
+        }}
       />
 
       {productoSeleccionado && (
@@ -58,7 +73,10 @@ export default function ProductosPage() {
           open={editOpen}
           onClose={() => setEditOpen(false)}
           producto={productoSeleccionado}
-          onSuccess={recargarProductos}
+          onSuccess={async () => {
+            resetProductos();
+            await fetchProducts();
+          }}
         />
       )}
     </div>
