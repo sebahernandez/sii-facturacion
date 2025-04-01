@@ -46,7 +46,7 @@ export default function ProductoEditModal({
   }, [producto]);
 
   useEffect(() => {
-    const neto = form.precioUnitario * form.cantidad - form.descuento;
+    const neto = form.precioUnitario - form.descuento;
     const ivaCalc = neto * 0.19;
     const total = neto + ivaCalc;
 
@@ -56,7 +56,7 @@ export default function ProductoEditModal({
       iva: parseFloat(ivaCalc.toFixed(2)),
       montoTotal: parseFloat(total.toFixed(2)),
     }));
-  }, [form.precioUnitario, form.cantidad, form.descuento]);
+  }, [form.precioUnitario, form.descuento]);
 
   const handleChange = (key: keyof Producto, value: string | number) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -107,10 +107,10 @@ export default function ProductoEditModal({
           </div>
 
           <div>
-            <Label className="py-2">Cantidad</Label>
+            <Label className="py-2">Cantidad (Stock)</Label>
             <Input
               type="number"
-              value={form.cantidad}
+              value={String(form.cantidad)}
               onChange={(e) =>
                 handleChange("cantidad", parseInt(e.target.value))
               }
@@ -121,7 +121,7 @@ export default function ProductoEditModal({
             <Label className="py-2">Precio Unitario</Label>
             <Input
               type="number"
-              value={form.precioUnitario}
+              value={String(form.precioUnitario)}
               onChange={(e) =>
                 handleChange("precioUnitario", parseFloat(e.target.value))
               }
@@ -132,7 +132,7 @@ export default function ProductoEditModal({
             <Label className="py-2">Descuento</Label>
             <Input
               type="number"
-              value={form.descuento}
+              value={String(form.descuento)}
               onChange={(e) =>
                 handleChange("descuento", parseFloat(e.target.value))
               }
@@ -141,17 +141,17 @@ export default function ProductoEditModal({
 
           <div>
             <Label className="py-2">IVA</Label>
-            <Input type="number" value={form.iva} disabled />
+            <Input type="number" value={String(form.iva)} disabled />
           </div>
 
           <div>
             <Label className="py-2">Monto Neto</Label>
-            <Input type="number" value={form.montoNeto} disabled />
+            <Input type="number" value={String(form.montoNeto)} disabled />
           </div>
 
           <div>
             <Label className="py-2">Total</Label>
-            <Input type="number" value={form.montoTotal} disabled />
+            <Input type="number" value={String(form.montoTotal)} disabled />
           </div>
         </div>
 

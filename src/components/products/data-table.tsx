@@ -23,12 +23,14 @@ import {
 import { Producto } from "@/types/producto";
 import { columns } from "./columns";
 
+// Props de la tabla
 interface DataTableProps {
   data: Producto[];
   onEditar: (producto: Producto) => void;
   onEliminar: (id: number) => void;
 }
 
+// Componente de la tabla
 export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
   const [filtro, setFiltro] = useState("");
   const [progress, setProgress] = useState(0);
@@ -37,6 +39,7 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
     pageSize: 10,
   });
 
+  // Simula un proceso de carga
   useEffect(() => {
     const timer = setInterval(() => {
       setProgress((prev) => (prev < 100 ? prev + 10 : 100));
@@ -44,6 +47,7 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
     return () => clearInterval(timer);
   }, []);
 
+  // Configuración de la tabla
   const table = useReactTable({
     data,
     columns: columns(onEditar, onEliminar),

@@ -162,7 +162,7 @@ export function RegisterForm() {
             ¿Ya tienes una cuenta?{" "}
             <Button
               variant="link"
-              className="p-0 h-auto font-medium"
+              className="p-0 h-auto font-medium cursor-pointer"
               onClick={() => router.push("/auth/login")}
               disabled={isLoading}
             >
