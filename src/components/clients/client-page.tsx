@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ImPlus } from "react-icons/im";
 import ClienteCreateModal from "@/components/modals/create-client.modal";
@@ -25,11 +25,25 @@ export default function ClientesPage() {
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<Cliente | null>(null);
 
+  // Memoizar los datos de los clientes
+  const memoizedClientes = useMemo(() => clientes ?? [], [clientes]);
+
   useEffect(() => {
     const controller = new AbortController();
     fetchClientes(controller.signal);
     return () => controller.abort();
   }, [fetchClientes]);
+
+  // Memoizar las funciones de callback
+  const handleEditar = useMemo(
+    () => (cliente: Cliente) => {
+      setClienteSeleccionado(cliente);
+      setEditOpen(true);
+    },
+    []
+  );
+
+  const handleEliminar = useMemo(() => (id: number) => setDeleteId(id), []);
 
   return (
     <div className="container mx-auto mt-10">
@@ -38,7 +52,9 @@ export default function ClientesPage() {
         onOpenChange={() => setDeleteId(null)}
         onConfirm={async () => {
           if (deleteId) {
-            const clienteAEliminar = clientes?.find((c) => c.id === deleteId);
+            const clienteAEliminar = memoizedClientes.find(
+              (c) => c.id === deleteId
+            );
             if (clienteAEliminar) {
               await eliminarCliente(deleteId, clienteAEliminar.razonSocial);
             }
@@ -55,12 +71,9 @@ export default function ClientesPage() {
       </div>
 
       <DataTable
-        data={clientes ?? []}
-        onEditar={(cliente) => {
-          setClienteSeleccionado(cliente);
-          setEditOpen(true);
-        }}
-        onEliminar={(id) => setDeleteId(id)}
+        data={memoizedClientes}
+        onEditar={handleEditar}
+        onEliminar={handleEliminar}
       />
 
       <ClienteCreateModal

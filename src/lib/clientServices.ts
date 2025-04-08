@@ -36,7 +36,7 @@ export const fetchClients = async (
 // Esta función se encarga de editar un cliente específico.
 // Se realiza una solicitud PUT a la API con el ID del cliente y los datos actualizados.
 // Si la solicitud es exitosa, se devuelve true. En caso de error, se lanza una excepción.
-export const editarCliente = async (cliente: Cliente): Promise<boolean> => {
+export const updateClient = async (cliente: Cliente): Promise<boolean> => {
   const { id, ...rest } = cliente;
   const res = await fetch(`/api/clientes/${id}`, {
     method: "PUT",
@@ -54,7 +54,7 @@ export const editarCliente = async (cliente: Cliente): Promise<boolean> => {
 // Esta función se encarga de eliminar un cliente específico.
 // Se realiza una solicitud DELETE a la API con el ID del cliente.
 // Si la solicitud es exitosa, se devuelve true. En caso de error, se lanza una excepción.
-export const eliminarCliente = async (id: number): Promise<boolean> => {
+export const deleteClient = async (id: number): Promise<boolean> => {
   const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Error al eliminar");
 

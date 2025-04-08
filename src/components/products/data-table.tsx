@@ -9,9 +9,10 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import useProductStore from "@/store/products.store";
 import {
   Table,
   TableHeader,
@@ -34,10 +35,43 @@ interface DataTableProps {
 export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
   const [filtro, setFiltro] = useState("");
   const [progress, setProgress] = useState(0);
+  const { isLoading } = useProductStore();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  // Memoize columns configuration
+  const tableColumns = useMemo(
+    () => columns(onEditar, onEliminar),
+    [onEditar, onEliminar]
+  );
+
+  // Memoize filtered data
+  const filteredData = useMemo(() => {
+    return data.filter(
+      (producto) =>
+        producto.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
+        producto.descripcion.toLowerCase().includes(filtro.toLowerCase())
+    );
+  }, [data, filtro]);
+
+  // Memoize pagination handlers
+  const handlePreviousPage = () => {
+    table.previousPage();
+  };
+
+  const handleNextPage = () => {
+    table.nextPage();
+  };
+
+  // Memoize filter handler
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFiltro(e.target.value);
+    },
+    []
+  );
 
   // Simula un proceso de carga
   useEffect(() => {
@@ -47,10 +81,10 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
     return () => clearInterval(timer);
   }, []);
 
-  // Configuración de la tabla
+  // Memoize table configuration
   const table = useReactTable({
-    data,
-    columns: columns(onEditar, onEliminar),
+    data: filteredData,
+    columns: tableColumns,
     state: {
       globalFilter: filtro,
       pagination,
@@ -67,7 +101,7 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
       <Input
         placeholder="Filtrar productos..."
         value={filtro}
-        onChange={(e) => setFiltro(e.target.value)}
+        onChange={handleFilterChange}
         className="max-w-sm mb-4"
       />
       <Table>
@@ -88,7 +122,35 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length ? (
+          {isLoading ? (
+            // Mostrar barra de progreso mientras se cargan los datos
+            <TableRow>
+              <TableCell
+                colSpan={columns(onEditar, onEliminar).length}
+                className="h-24 text-center"
+              >
+                <Progress value={progress} className="w-[100%] mx-auto" />
+              </TableCell>
+            </TableRow>
+          ) : data && data.length === 0 && isLoading ? (
+            // Mostrar mensaje solo si no hay datos y no estamos cargando
+            <TableRow>
+              <TableCell colSpan={8} className="h-24 text-center">
+                <span>No hay clientes registrados</span>
+              </TableCell>
+            </TableRow>
+          ) : table.getRowModel().rows.length === 0 && filtro ? (
+            // Mostrar mensaje si no hay resultados para el filtro
+            <TableRow>
+              <TableCell
+                colSpan={columns(onEditar, onEliminar).length}
+                className="h-24 text-center"
+              >
+                <span>No se encontraron resultados para {filtro}</span>
+              </TableCell>
+            </TableRow>
+          ) : (
+            // Mostrar las filas de la tabla si hay datos
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
@@ -98,17 +160,6 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
                 ))}
               </TableRow>
             ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={columns(onEditar, onEliminar).length}
-                className="text-center"
-              >
-                {progress < 100 && (
-                  <Progress value={progress} className="w-[100%]" />
-                )}
-              </TableCell>
-            </TableRow>
           )}
         </TableBody>
       </Table>
@@ -119,14 +170,14 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
         </div>
         <div className="space-x-2">
           <button
-            onClick={() => table.previousPage()}
+            onClick={handlePreviousPage}
             disabled={!table.getCanPreviousPage()}
             className="px-3 py-1 text-sm border rounded disabled:opacity-50 cursor-pointer"
           >
             Anterior
           </button>
           <button
-            onClick={() => table.nextPage()}
+            onClick={handleNextPage}
             disabled={!table.getCanNextPage()}
             className="px-3 py-1 text-sm border rounded disabled:opacity-50 cursor-pointer"
           >

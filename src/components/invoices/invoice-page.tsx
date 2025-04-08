@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { DataTable } from "@/components/invoices/data-table";
 import { Button } from "@/components/ui/button";
 import { ImPlus } from "react-icons/im";
-import { Progress } from "@/components/ui/progress";
 import InvoiceCreateModal from "@/components/modals/create-invoice-modal";
 import InvoiceEditModal from "@/components/modals/edit-invoice-modal";
 import { Factura } from "@/types/factura";
 import useInvoiceStore from "@/store/invoices.store";
 
 export default function InvoicePage() {
-  const { facturas, isLoading, fetchInvoices } = useInvoiceStore();
+  const { facturas, fetchInvoices } = useInvoiceStore();
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [facturaSeleccionada, setFacturaSeleccionada] =
@@ -40,11 +39,7 @@ export default function InvoicePage() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <Progress value={100} className="w-[60%] mx-auto" />
-      ) : (
-        <DataTable data={facturas || []} onEditar={handleEditar} />
-      )}
+      {<DataTable data={facturas || []} onEditar={handleEditar} />}
 
       <InvoiceCreateModal
         open={createOpen}

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { Cliente } from "@/types/cliente";
-import { fetchClients } from "@/lib/clientServices";
+import { fetchClients, deleteClient, updateClient } from "@/lib/clientServices";
 
 // Definir la interfaz del store
 interface ClienteStore {
@@ -43,10 +43,8 @@ const useClienteStore = create<ClienteStore>((set, get) => ({
   // Función para eliminar un cliente
   eliminarCliente: async (id: number, razonSocial: string) => {
     try {
-      const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Error al eliminar");
+      await deleteClient(id);
 
-      // Actualizar clientes después de eliminar
       const { resetClientes, fetchClientes } = get();
       resetClientes();
       await fetchClientes();
@@ -62,17 +60,8 @@ const useClienteStore = create<ClienteStore>((set, get) => ({
 
   // Función para editar un cliente
   editarCliente: async (cliente: Cliente) => {
-    const { id, ...rest } = cliente;
     try {
-      const res = await fetch(`/api/clientes/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(rest),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) throw new Error("Error al editar");
+      await updateClient(cliente);
 
       const { resetClientes, fetchClientes } = get();
       resetClientes();
