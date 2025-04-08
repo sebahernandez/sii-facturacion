@@ -27,6 +27,8 @@ model User {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   products    Producto[] // Relación uno a muchos con Producto
+  clientes    Cliente[]  // Relación uno a muchos con Cliente
+  facturas    Factura[]  // Relación uno a muchos con Factura
 }
 
 // Modelo de producto
@@ -48,7 +50,62 @@ model Producto {
 }
 
 
-//todo: 1. Crear modelo de clientes
-//todo: 2. Crear modelo de productos
-//todo: 3. Crear modelo de facturas
+// Modelo de clientes
+
+model Cliente {
+  id           Int      @id @default(autoincrement())
+  rut          String   @unique
+  razonSocial  String
+  giro         String
+  direccion    String
+  comuna       String
+  ciudad       String?
+  contacto     String?
+  telefono     String?
+  user_id      String   @db.Uuid // Clave foránea hacia el usuario que crea el cliente
+  user         User     @relation(fields: [user_id], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Modelo de facturas
+
+model Factura {
+  id                  Int              @id @default(autoincrement())
+  folio               Int              @unique
+  tipoDTE             Int
+  fechaEmision        DateTime         @default(now())
+  razonSocialEmisor   String
+  rutEmisor           String
+  rutReceptor         String
+  razonSocialReceptor String
+  direccionReceptor   String
+  comunaReceptor      String
+  ciudadReceptor      String?
+  montoNeto           Decimal          @db.Decimal(10, 2)
+  iva                 Decimal          @db.Decimal(10, 2)
+  montoTotal          Decimal          @db.Decimal(10, 2)
+  estado              String           @default("emitida")
+  observaciones       String?
+  user_id             String           @db.Uuid
+  user                User             @relation(fields: [user_id], references: [id])
+  detalles            DetalleFactura[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([user_id])
+}
+
+model DetalleFactura {
+  id          Int      @id @default(autoincrement())
+  cantidad    Int
+  descripcion String
+  precioUnit  Decimal  @db.Decimal(10, 2)
+  descuento   Decimal  @db.Decimal(5, 2) @default(0)
+  montoNeto   Decimal  @db.Decimal(10, 2)
+  factura_id  Int
+  factura     Factura  @relation(fields: [factura_id], references: [id])
+
+  @@index([factura_id])
+}
 

@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaAdapter } from "@next-auth/prisma-adapter"; // Updated import
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { RateLimiterMemory } from "rate-limiter-flexible";
@@ -102,5 +102,9 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
+  },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
 };
