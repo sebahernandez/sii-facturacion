@@ -14,7 +14,6 @@ export async function guardarConfiguracion(datosEmpresa: {
   razonSocial: string;
   giro: string;
   direccion: string;
-  documentos: string[];
 }) {
   try {
     const response = await fetch("/api/guardar-configuracion", {
