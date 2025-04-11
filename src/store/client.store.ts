@@ -45,9 +45,12 @@ const useClienteStore = create<ClienteStore>((set, get) => ({
     try {
       await deleteClient(id);
 
-      const { resetClientes, fetchClientes } = get();
-      resetClientes();
-      await fetchClientes();
+      const { clientes } = get();
+      if (!clientes) return false;
+      const clientesActualizados = clientes.filter(
+        (cliente) => cliente.id !== id
+      );
+      set({ clientes: clientesActualizados });
 
       toast.success(`Cliente ${razonSocial} eliminado exitosamente`);
       return true;
@@ -59,15 +62,25 @@ const useClienteStore = create<ClienteStore>((set, get) => ({
   },
 
   // Función para editar un cliente
-  editarCliente: async (cliente: Cliente) => {
+  editarCliente: async (clienteActualizado: Cliente) => {
     try {
-      await updateClient(cliente);
+      await updateClient(clienteActualizado);
 
-      const { resetClientes, fetchClientes } = get();
-      resetClientes();
-      await fetchClientes();
+      const { clientes } = get();
 
-      toast.success(`Cliente ${cliente.razonSocial} actualizado exitosamente`);
+      console.log("Clientes antes de la actualización:", clientes);
+
+      if (!clientes) return false;
+
+      const clientesActualizados = clientes?.map((cliente) =>
+        cliente.id === clienteActualizado.id ? clienteActualizado : cliente
+      );
+
+      set({ clientes: clientesActualizados });
+
+      toast.success(
+        `Cliente ${clienteActualizado.razonSocial} actualizado exitosamente`
+      );
       return true;
     } catch (error) {
       console.error(error);
@@ -80,7 +93,10 @@ const useClienteStore = create<ClienteStore>((set, get) => ({
   setClientes: (clientes: Cliente[]) => set({ clientes }),
 
   // Función para resetear clientes
-  resetClientes: () => set({ clientes: null }),
+  resetClientes: () => {
+    console.log("Reseteando clientes...");
+    set({ clientes: null });
+  },
 }));
 
 export default useClienteStore;

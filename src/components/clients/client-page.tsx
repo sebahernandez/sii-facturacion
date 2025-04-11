@@ -34,16 +34,13 @@ export default function ClientesPage() {
     return () => controller.abort();
   }, [fetchClientes]);
 
-  // Memoizar las funciones de callback
-  const handleEditar = useMemo(
-    () => (cliente: Cliente) => {
-      setClienteSeleccionado(cliente);
-      setEditOpen(true);
-    },
-    []
-  );
+  const handleEditar = (cliente: Cliente) => {
+    setClienteSeleccionado(cliente);
+    console.log("Cliente seleccionado:", cliente);
+    setEditOpen(true);
+  };
 
-  const handleEliminar = useMemo(() => (id: number) => setDeleteId(id), []);
+  const handleEliminar = (id: number) => setDeleteId(id);
 
   return (
     <div className="container mx-auto mt-10">
@@ -90,10 +87,6 @@ export default function ClientesPage() {
           open={editOpen}
           onClose={() => setEditOpen(false)}
           cliente={clienteSeleccionado}
-          onSuccess={async () => {
-            resetClientes();
-            await fetchClientes();
-          }}
           editarCliente={editarCliente}
         />
       )}
