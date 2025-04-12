@@ -14,14 +14,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { invoiceSchema, type InvoiceInput } from "@/lib/zod";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import useClienteStore from "@/store/client.store";
+import { SearchClient } from "@/components/clients/search-client";
 
 interface CreateInvoiceModalProps {
   open: boolean;
@@ -122,21 +117,10 @@ export default function InvoiceCreateModal({
           <DialogTitle>Crear Nueva Factura</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Selector de Cliente */}
+          {/* Buscador de Cliente */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Seleccionar Cliente</h3>
-            <Select onValueChange={handleClienteSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione un cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes?.map((cliente) => (
-                  <SelectItem key={cliente.rut} value={cliente.rut}>
-                    {cliente.razonSocial}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <h3 className="font-semibold">Buscar Cliente</h3>
+            <SearchClient clientes={clientes} onSelect={handleClienteSelect} />
           </div>
 
           {/* Datos del Receptor */}
