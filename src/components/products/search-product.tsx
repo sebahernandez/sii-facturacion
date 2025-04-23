@@ -47,7 +47,14 @@ export function SearchProduct({ productos, onSelect }: SearchProductProps) {
       />
 
       {isOpen && search.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md">
+        <div
+          className="fixed z-[999] w-full mt-1 bg-popover border rounded-md shadow-md"
+          style={{
+            width: wrapperRef.current?.offsetWidth + "px",
+            left: wrapperRef.current?.getBoundingClientRect().left + "px",
+            top: wrapperRef.current?.getBoundingClientRect().bottom + "px",
+          }}
+        >
           {filteredProductos?.length === 0 ? (
             <div className="p-2 text-sm text-muted-foreground">
               No se encontraron resultados
