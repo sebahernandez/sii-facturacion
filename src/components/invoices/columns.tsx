@@ -9,13 +9,15 @@ import { Badge } from "@/components/ui/badge";
 
 // Función para obtener el color del estado
 function getEstadoColor(estado: string) {
-  switch (estado.toLowerCase()) {
-    case "emitida":
+  switch (estado.toUpperCase()) {
+    case "EMITIDA":
       return "bg-green-100 text-green-800";
-    case "anulada":
+    case "NO_ENVIADA":
+      return "bg-yellow-100 text-yellow-800";
+    case "ENVIADA":
+      return "bg-blue-100 text-blue-800";
+    case "ANULADA":
       return "bg-red-100 text-red-800";
-    case "rechazada":
-      return "bg-orange-100 text-orange-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -27,9 +29,9 @@ export const columns = (
   onEliminar: (id: number) => void
 ): ColumnDef<Factura>[] => [
   {
-    accessorKey: "folio",
-    header: "Folio",
-    cell: ({ row }) => <span>{row.original.folio}</span>,
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <span>#{row.original.id}</span>,
   },
   {
     accessorKey: "fechaEmision",

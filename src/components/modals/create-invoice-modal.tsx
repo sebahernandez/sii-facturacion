@@ -1,33 +1,86 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { invoiceSchema, type InvoiceInput } from "@/lib/zod";
+import { useInvoiceForm } from "@/hooks/use-invoice-form";
 import { toast } from "sonner";
 import useClienteStore from "@/store/client.store";
 import useProductStore from "@/store/products.store";
+import useInvoiceStore from "@/store/invoices.store";
+import { useAuthStore } from "@/hooks/authStore";
 import { SearchClient } from "@/components/clients/search-client";
 import { SearchProduct } from "@/components/products/search-product";
 import { Producto } from "@/types/producto";
 import { Detalles } from "@/types/detalles";
+import { DetalleFacturaSinId } from "@/types/factura";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TablaDetallesEditable } from "@/components/invoice/tabla-detalles-editable";
+import {
+  handleProductoSelect,
+  handleRemoveDetalle,
+  handleDetalleChange,
+} from "@/utils/invoice-handlers";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { formatRut } from "@/lib/utils";
+
+type FacturaCreate = {
+  tipoDTE: number;
+  fechaEmision: Date;
+  razonSocialEmisor: string;
+  rutEmisor: string;
+  rutReceptor: string;
+  razonSocialReceptor: string;
+  direccionReceptor: string;
+  comunaReceptor: string;
+  ciudadReceptor?: string;
+  contactoReceptor?: string;
+  montoNeto: number;
+  iva: number;
+  montoTotal: number;
+  estado: string;
+  observaciones?: string;
+  user_id: string;
+  detalles: DetalleFacturaSinId[];
+};
 
 interface CreateInvoiceModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
+
+interface FormData {
+  tipoDTE: number;
+  fechaEmision: string;
+  rutReceptor: string;
+  razonSocialReceptor: string;
+  direccionReceptor: string;
+  comunaReceptor: string;
+  contactoReceptor?: string;
+  observaciones?: string;
+  montoNeto: number;
+  iva: number;
+  montoTotal: number;
+  estado: "EMITIDA" | "NO_ENVIADA" | "ENVIADA" | "ANULADA";
+  detalles: DetalleFacturaSinId[];
+}
+
 export default function InvoiceCreateModal({
   open,
   onClose,
@@ -43,153 +96,70 @@ export default function InvoiceCreateModal({
   const [itemsAccordionOpen, setItemsAccordionOpen] = useState<boolean>(true);
   const [montosAccordionOpen, setMontosAccordionOpen] = useState<boolean>(true);
 
-  const form = useForm<InvoiceInput>({
-    resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      tipoDTE: 33,
-      rutReceptor: "",
-      razonSocialReceptor: "",
-      direccionReceptor: "",
-      comunaReceptor: "",
-      fechaEmision: new Date().toISOString().split("T")[0],
-      montoNeto: 0,
-      iva: 0,
-      montoTotal: 0,
-      estado: "emitida",
-      detalles: [],
-    },
-  });
+  // Destructure form from useInvoiceForm
+  const form = useInvoiceForm();
+  const { calcularMontos, register, setValue, watch, reset, handleSubmit } =
+    form;
 
   // Agregar watch para montoNeto y calcular IVA y total automáticamente
-  const montoNeto = form.watch("montoNeto");
-
-  const calcularMontos = useCallback(
-    (neto: number) => {
-      const iva = Math.round(neto * 0.19);
-      const total = neto + iva;
-      form.setValue("iva", iva);
-      form.setValue("montoTotal", total);
-    },
-    [form]
-  );
+  const montoNeto = watch("montoNeto");
 
   useEffect(() => {
     if (montoNeto) {
       calcularMontos(montoNeto);
     }
+  }, [montoNeto, calcularMontos]);
+
+  useEffect(() => {
     const controller = new AbortController();
     fetchClientes(controller.signal);
     fetchProducts(controller.signal);
     return () => controller.abort();
-  }, [fetchClientes, fetchProducts, calcularMontos, montoNeto]);
+  }, [fetchClientes, fetchProducts]);
 
   const handleClienteSelect = (rutCliente: string) => {
     const clienteSeleccionado = clientes?.find((c) => c.rut === rutCliente);
     if (clienteSeleccionado) {
-      form.setValue("rutReceptor", clienteSeleccionado.rut);
-      form.setValue("razonSocialReceptor", clienteSeleccionado.razonSocial);
-      form.setValue("direccionReceptor", clienteSeleccionado.direccion);
-      form.setValue("comunaReceptor", clienteSeleccionado.comuna);
-      form.setValue("contactoReceptor", clienteSeleccionado.contacto || "");
+      setValue("rutReceptor", clienteSeleccionado.rut);
+      setValue("razonSocialReceptor", clienteSeleccionado.razonSocial);
+      setValue("direccionReceptor", clienteSeleccionado.direccion);
+      setValue("comunaReceptor", clienteSeleccionado.comuna);
+      setValue("contactoReceptor", clienteSeleccionado.contacto || "");
     }
   };
 
-  const handleProductoSelect = (producto: Producto) => {
-    const detalleExistente = detalles.find(
-      (detalle) => detalle.descripcion === producto.descripcion
+  // Función adaptadora para usar la función importada
+  const handleProductSelect = (producto: Producto) => {
+    handleProductoSelect(
+      producto,
+      detalles,
+      productoCantidad,
+      setDetalles,
+      setValue,
+      setProductoCantidad,
+      setItemsAccordionOpen
     );
-
-    let nuevosDetalles;
-    if (detalleExistente) {
-      nuevosDetalles = detalles.map((detalle) =>
-        detalle.descripcion === producto.descripcion
-          ? {
-              ...detalle,
-              cantidad: detalle.cantidad + productoCantidad,
-              montoNeto:
-                (detalle.cantidad + productoCantidad) *
-                  Number(detalle.precioUnit) -
-                Number(detalle.descuento),
-            }
-          : detalle
-      );
-    } else {
-      const montoNetoProducto =
-        productoCantidad * producto.precioUnitario - (producto.descuento || 0);
-      nuevosDetalles = [
-        ...detalles,
-        {
-          cantidad: productoCantidad,
-          descripcion: producto.descripcion,
-          precioUnit: String(producto.precioUnitario),
-          descuento: String(producto.descuento || 0),
-          montoNeto: montoNetoProducto,
-        },
-      ];
-    }
-
-    setDetalles(nuevosDetalles);
-
-    // Calcular el nuevo monto neto total con los detalles actualizados
-    const montoNetoNuevo = nuevosDetalles.reduce(
-      (acc, detalle) => acc + detalle.montoNeto,
-      0
-    );
-    form.setValue("montoNeto", montoNetoNuevo);
-    setProductoCantidad(1);
-
-    // Abrir la lista de items después de añadir un producto
-    setItemsAccordionOpen(true);
   };
 
-  const handleRemoveDetalle = (descripcionProducto: string) => {
-    const nuevosDetalles = detalles.filter(
-      (detalle) => detalle.descripcion !== descripcionProducto
-    );
-
-    setDetalles(nuevosDetalles);
-
-    // Recalcular el monto neto total con los detalles actualizados
-    const montoNetoNuevo = nuevosDetalles.reduce(
-      (acc, detalle) => acc + detalle.montoNeto,
-      0
-    );
-    form.setValue("montoNeto", montoNetoNuevo);
+  // Función adaptadora para eliminar detalles
+  const handleDetalleRemove = (descripcionProducto: string) => {
+    handleRemoveDetalle(descripcionProducto, detalles, setDetalles, setValue);
   };
 
-  // Agregar nueva función para manejar cambios en los detalles
-  const handleDetalleChange = (
+  // Función adaptadora para cambiar detalles
+  const handleDetalleUpdate = (
     descripcion: string,
     field: keyof Detalles,
     value: string | number
   ) => {
-    const nuevosDetalles = detalles.map((detalle) => {
-      if (detalle.descripcion === descripcion) {
-        const nuevoDetalle = { ...detalle };
-
-        if (field === "cantidad") {
-          nuevoDetalle.cantidad = Number(value);
-        } else if (field === "precioUnit" || field === "descuento") {
-          nuevoDetalle[field] = String(value);
-        }
-
-        // Recalcular el monto neto del item
-        nuevoDetalle.montoNeto =
-          nuevoDetalle.cantidad * Number(nuevoDetalle.precioUnit) -
-          Number(nuevoDetalle.descuento);
-        return nuevoDetalle;
-      }
-      return detalle;
-    });
-
-    setDetalles(nuevosDetalles);
-
-    // Actualizar el monto neto total
-    const montoNetoNuevo = nuevosDetalles.reduce(
-      (acc, detalle) => acc + detalle.montoNeto,
-      0
+    handleDetalleChange(
+      descripcion,
+      field,
+      value,
+      detalles,
+      setDetalles,
+      setValue
     );
-    form.setValue("montoNeto", montoNetoNuevo);
   };
 
   const toggleProductsAccordion = () => {
@@ -204,45 +174,130 @@ export default function InvoiceCreateModal({
     setMontosAccordionOpen(!montosAccordionOpen);
   };
 
-  const onSubmit = async (data: InvoiceInput) => {
+  const handleFieldChange = (
+    field:
+      | "tipoDTE"
+      | "fechaEmision"
+      | "rutReceptor"
+      | "razonSocialReceptor"
+      | "direccionReceptor"
+      | "comunaReceptor"
+      | "montoNeto"
+      | "iva"
+      | "montoTotal"
+      | "estado"
+      | "observaciones"
+      | `detalles.${number}.precioUnit`
+      | `detalles.${number}.descuento`
+      | `detalles.${number}.montoNeto`,
+    value: string
+  ) => {
+    if (field === "rutReceptor") {
+      value = formatRut(value);
+    }
+    form.setValue(field, value);
+  };
+
+  const onSubmit = async (formData: FormData) => {
     try {
+      console.log("Form submitted with data:", formData);
+      // Validar datos del receptor
+      if (!formData.rutReceptor?.trim()) {
+        toast.error("Debe ingresar el RUT del receptor");
+        return;
+      }
+      if (!formData.razonSocialReceptor?.trim()) {
+        toast.error("Debe ingresar la razón social del receptor");
+        return;
+      }
+      if (!formData.direccionReceptor?.trim()) {
+        toast.error("Debe ingresar la dirección del receptor");
+        return;
+      }
+      if (!formData.comunaReceptor?.trim()) {
+        toast.error("Debe ingresar la comuna del receptor");
+        return;
+      }
+
+      // Validar fecha de emisión
+      if (!formData.fechaEmision) {
+        toast.error("Debe seleccionar una fecha de emisión");
+        return;
+      }
+
+      // Validar detalles/productos
+      if (detalles.length === 0) {
+        toast.error("Debe agregar al menos un producto");
+        return;
+      }
+
       setIsLoading(true);
 
       // Asegurarse de que los montos estén actualizados
-      const montoNetoTotal = detalles.reduce(
-        (acc, detalle) => acc + detalle.montoNeto,
-        0
+      const montoNetoTotal = Math.abs(
+        detalles.reduce((acc, detalle) => acc + detalle.montoNeto, 0)
       );
       const ivaTotal = Math.round(montoNetoTotal * 0.19);
       const montoTotal = montoNetoTotal + ivaTotal;
 
-      const facturaData = {
-        ...data,
-        montoNeto: montoNetoTotal,
+      // Actualizar los montos en el formulario
+      setValue("montoNeto", montoNetoTotal);
+      setValue("iva", ivaTotal);
+      setValue("montoTotal", montoTotal);
+
+      // Obtener los datos de emisor desde la sesión
+      const { session } = useAuthStore.getState();
+
+      // Transformar los detalles
+      const detallesTransformados = detalles.map((detalle) => ({
+        cantidad: detalle.cantidad,
+        descripcion: detalle.descripcion,
+        precioUnit: Number(detalle.precioUnit),
+        descuento: Number(detalle.descuento),
+        montoNeto: detalle.montoNeto,
+      }));
+
+      // Crear el objeto de factura con el tipo correcto para detalles
+      const facturaData: FacturaCreate = {
+        tipoDTE: formData.tipoDTE,
+        rutReceptor: formData.rutReceptor,
+        razonSocialReceptor: formData.razonSocialReceptor,
+        direccionReceptor: formData.direccionReceptor,
+        comunaReceptor: formData.comunaReceptor,
+        contactoReceptor: formData.contactoReceptor,
+        observaciones: formData.observaciones,
         iva: ivaTotal,
         montoTotal: montoTotal,
-        detalles: detalles,
+        montoNeto: montoNetoTotal,
+        detalles: detallesTransformados,
+        rutEmisor: "76123456-7",
+        razonSocialEmisor: "Mi Empresa SpA",
+        user_id: session?.user?.id || "",
+        estado: "NO_ENVIADA",
+        fechaEmision: formData.fechaEmision
+          ? new Date(formData.fechaEmision)
+          : new Date(),
       };
 
-      const response = await fetch("/api/facturas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(facturaData),
-      });
+      // Crear la factura usando el store
+      const { crearFactura } = useInvoiceStore.getState();
+      if (!crearFactura) {
+        throw new Error("No se pudo acceder a la función crearFactura");
+      }
+      const resultado = await crearFactura(facturaData);
+      console.log("Factura data:", facturaData);
 
-      if (!response.ok) {
+      if (!resultado) {
         throw new Error("Error al crear factura");
       }
 
       toast.success("Factura creada exitosamente");
       onSuccess();
-      form.reset();
+      reset();
       setDetalles([]);
       setProductoCantidad(1);
     } catch (error) {
-      console.error(error);
+      console.error("Error in form submission:", error);
       toast.error("Error al crear factura");
     } finally {
       setIsLoading(false);
@@ -254,258 +309,309 @@ export default function InvoiceCreateModal({
       <DialogContent className="min-w-[1000px] max-w-[1240px] flex flex-col max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Crear Nueva Factura</DialogTitle>
+          <DialogDescription>
+            Complete los campos para crear una nueva factura. Incluya la
+            información del cliente, detalles y montos.
+          </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex-1 flex flex-col gap-6"
-        >
-          {/* Sección de datos del cliente y factura */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Buscador de Cliente */}
-            <div className="space-y-11">
-              <h3 className="font-semibold">Buscar Cliente</h3>
-              <SearchClient
-                clientes={clientes}
-                onSelect={handleClienteSelect}
-              />
+        <Form {...form}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex-1 flex flex-col gap-6"
+          >
+            {/* Sección de datos del cliente y factura */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Buscador de Cliente */}
+              <div className="space-y-11">
+                <h3 className="font-semibold">Buscar Cliente</h3>
+                <SearchClient
+                  clientes={clientes}
+                  onSelect={handleClienteSelect}
+                />
+              </div>
+
+              {/* Detalles de la Factura */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Detalles de la Factura</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="tipoDTE"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo DTE</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={true} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fechaEmision"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha Emisión</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Datos del Receptor */}
+              <div className="space-y-4 md:col-span-2">
+                <h3 className="font-semibold">Datos del Receptor</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="rutReceptor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>RUT Receptor</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isLoading}
+                            placeholder="76123456-7"
+                            onChange={(e) =>
+                              handleFieldChange("rutReceptor", e.target.value)
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="razonSocialReceptor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Razón Social</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contactoReceptor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email de Contacto</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="direccionReceptor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dirección</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="comunaReceptor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comuna</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Detalles de la Factura */}
+            {/* Rest of the form... */}
             <div className="space-y-4">
-              <h3 className="font-semibold">Detalles de la Factura</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="tipoDTE" className="py-2">
-                    Tipo DTE
-                  </Label>
-                  <Input
-                    id="tipoDTE"
-                    {...form.register("tipoDTE", { valueAsNumber: true })}
-                    disabled={true}
-                    defaultValue="33"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fechaEmision" className="py-2">
-                    Fecha Emisión
-                  </Label>
-                  <Input
-                    id="fechaEmision"
-                    type="date"
-                    {...form.register("fechaEmision")}
-                    disabled={isLoading}
-                  />
-                </div>
+              {/* Acordeón para agregar productos */}
+              <div className="border rounded-md overflow-hidden shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleProductsAccordion();
+                  }}
+                  className="w-full flex justify-between items-center py-3 font-medium text-left"
+                >
+                  <h3 className="font-semibold">Agregar Productos</h3>
+                  {productsAccordionOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </Button>
+                {productsAccordionOpen && (
+                  <div className="p-4 pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="producto" className="py-2">
+                          Producto
+                        </Label>
+                        <SearchProduct
+                          productos={productos}
+                          onSelect={handleProductSelect}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cantidad" className="py-2">
+                          Cantidad
+                        </Label>
+                        <Input
+                          id="cantidad"
+                          type="number"
+                          value={productoCantidad}
+                          onChange={(e) =>
+                            setProductoCantidad(Number(e.target.value))
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Acordeón para la lista de items */}
+              <div className="border rounded-md overflow-hidden shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleItemsAccordion();
+                  }}
+                  className="w-full flex justify-between items-center py-3 font-medium text-left"
+                >
+                  <h3 className="font-semibold">Lista de Items</h3>
+                  {itemsAccordionOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </Button>
+                {itemsAccordionOpen && (
+                  <div className="p-4 pt-0">
+                    <TablaDetallesEditable
+                      detalles={detalles}
+                      isLoading={isLoading}
+                      handleDetalleChange={handleDetalleUpdate}
+                      handleRemoveDetalle={handleDetalleRemove}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Acordeón para montos */}
+              <div className="border rounded-md overflow-hidden shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleMontosAccordion();
+                  }}
+                  className="w-full flex justify-between items-center py-3 font-medium text-left"
+                >
+                  <h3 className="font-semibold">Montos y Resumen</h3>
+                  {montosAccordionOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </Button>
+                {montosAccordionOpen && (
+                  <div className="p-4 pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="montoNeto" className="py-2">
+                          Monto Neto
+                        </Label>
+                        <Input
+                          id="montoNeto"
+                          type="number"
+                          {...register("montoNeto", { valueAsNumber: true })}
+                          disabled={true}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="iva" className="py-2">
+                          IVA (19%)
+                        </Label>
+                        <Input
+                          id="iva"
+                          type="number"
+                          {...register("iva", { valueAsNumber: true })}
+                          disabled={true}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="montoTotal" className="py-2">
+                          Total
+                        </Label>
+                        <Input
+                          id="montoTotal"
+                          type="number"
+                          {...register("montoTotal", {
+                            valueAsNumber: true,
+                          })}
+                          disabled={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Datos del Receptor */}
-            <div className="space-y-4 md:col-span-2">
-              <h3 className="font-semibold">Datos del Receptor</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="rutReceptor" className="py-2">
-                    RUT Receptor
-                  </Label>
-                  <Input
-                    id="rutReceptor"
-                    {...form.register("rutReceptor")}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="razonSocialReceptor" className="py-2">
-                    Razón Social
-                  </Label>
-                  <Input
-                    id="razonSocialReceptor"
-                    {...form.register("razonSocialReceptor")}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="contactoReceptor" className="py-2">
-                    Email de Contacto
-                  </Label>
-                  <Input
-                    id="contactoReceptor"
-                    {...form.register("contactoReceptor")}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="direccionReceptor" className="py-2">
-                    Dirección
-                  </Label>
-                  <Input
-                    id="direccionReceptor"
-                    {...form.register("direccionReceptor")}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="comunaReceptor" className="py-2">
-                    Comuna
-                  </Label>
-                  <Input
-                    id="comunaReceptor"
-                    {...form.register("comunaReceptor")}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Secciones colapsables */}
-          <div className="space-y-4">
-            {/* Acordeón para agregar productos */}
-            <div className="border rounded-md overflow-hidden shadow-sm">
+            {/* Botones de acción */}
+            <div className="flex justify-end space-x-4 mt-4">
               <Button
                 type="button"
-                variant="ghost"
-                className="w-full flex justify-between items-center py-3 font-medium text-left"
-                onClick={toggleProductsAccordion}
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onClose();
+                }}
+                disabled={isLoading}
+                className="cursor-pointer"
               >
-                <h3 className="font-semibold">Agregar Productos</h3>
-                {productsAccordionOpen ? (
-                  <ChevronUp className="h-5 w-5" />
-                ) : (
-                  <ChevronDown className="h-5 w-5" />
-                )}
+                Cancelar
               </Button>
-              {productsAccordionOpen && (
-                <div className="p-4 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="producto" className="py-2">
-                        Producto
-                      </Label>
-                      <SearchProduct
-                        productos={productos}
-                        onSelect={handleProductoSelect}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cantidad" className="py-2">
-                        Cantidad
-                      </Label>
-                      <Input
-                        id="cantidad"
-                        type="number"
-                        value={productoCantidad}
-                        onChange={(e) =>
-                          setProductoCantidad(Number(e.target.value))
-                        }
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Acordeón para la lista de items */}
-            <div className="border rounded-md overflow-hidden shadow-sm">
               <Button
-                type="button"
-                variant="ghost"
-                className="w-full flex justify-between items-center py-3 font-medium text-left"
-                onClick={toggleItemsAccordion}
+                type="submit"
+                disabled={isLoading}
+                className="cursor-pointer"
               >
-                <h3 className="font-semibold">Lista de Items</h3>
-                {itemsAccordionOpen ? (
-                  <ChevronUp className="h-5 w-5" />
-                ) : (
-                  <ChevronDown className="h-5 w-5" />
-                )}
+                {isLoading ? "Creando..." : "Crear Factura"}
               </Button>
-              {itemsAccordionOpen && (
-                <div className="p-4 pt-0">
-                  <TablaDetallesEditable
-                    detalles={detalles}
-                    isLoading={isLoading}
-                    handleDetalleChange={handleDetalleChange}
-                    handleRemoveDetalle={handleRemoveDetalle}
-                  />
-                </div>
-              )}
             </div>
-
-            {/* Acordeón para montos */}
-            <div className="border rounded-md overflow-hidden shadow-sm">
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full flex justify-between items-center py-3 font-medium text-left"
-                onClick={toggleMontosAccordion}
-              >
-                <h3 className="font-semibold">Montos y Resumen</h3>
-                {montosAccordionOpen ? (
-                  <ChevronUp className="h-5 w-5" />
-                ) : (
-                  <ChevronDown className="h-5 w-5" />
-                )}
-              </Button>
-              {montosAccordionOpen && (
-                <div className="p-4 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="montoNeto" className="py-2">
-                        Monto Neto
-                      </Label>
-                      <Input
-                        id="montoNeto"
-                        type="number"
-                        {...form.register("montoNeto", { valueAsNumber: true })}
-                        disabled={true}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="iva" className="py-2">
-                        IVA (19%)
-                      </Label>
-                      <Input
-                        id="iva"
-                        type="number"
-                        {...form.register("iva", { valueAsNumber: true })}
-                        disabled={true}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="montoTotal" className="py-2">
-                        Total
-                      </Label>
-                      <Input
-                        id="montoTotal"
-                        type="number"
-                        {...form.register("montoTotal", {
-                          valueAsNumber: true,
-                        })}
-                        disabled={true}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex justify-end space-x-4 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creando..." : "Crear Factura"}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

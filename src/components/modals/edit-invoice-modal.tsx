@@ -6,15 +6,24 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
+import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { invoiceSchema, type InvoiceInput } from "@/lib/zod";
 import { Factura } from "@/types/factura";
 import { toast } from "sonner";
+import { formatRut } from "@/lib/utils";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface EditInvoiceModalProps {
   open: boolean;
@@ -33,7 +42,6 @@ export default function InvoiceEditModal({
   const form = useForm({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      folio: factura.folio,
       tipoDTE: factura.tipoDTE,
       rutReceptor: factura.rutReceptor,
       razonSocialReceptor: factura.razonSocialReceptor,
@@ -44,6 +52,13 @@ export default function InvoiceEditModal({
       montoTotal: factura.montoTotal,
     },
   });
+
+  const handleFieldChange = (field: keyof InvoiceInput, value: string) => {
+    if (field === "rutReceptor") {
+      value = formatRut(value);
+    }
+    form.setValue(field, value);
+  };
 
   const onSubmit = async (data: InvoiceInput) => {
     try {
@@ -75,33 +90,47 @@ export default function InvoiceEditModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Factura</DialogTitle>
+          <DialogDescription>
+            Actualice los campos de la factura que desea modificar.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="folio">Folio</Label>
-              <Input
-                id="folio"
-                {...form.register("folio")}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="rutReceptor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>RUT Receptor</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isLoading}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleFieldChange("rutReceptor", e.target.value)
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* ... resto de los campos ... */}
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
                 disabled={isLoading}
-              />
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Guardando..." : "Guardar Cambios"}
+              </Button>
             </div>
-            {/* Agregar más campos según necesites */}
-          </div>
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Guardando..." : "Guardar Cambios"}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

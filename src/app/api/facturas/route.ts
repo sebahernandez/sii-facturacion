@@ -44,13 +44,15 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    const { ...facturaData } = data;
+    console.log("facturaData", facturaData);
 
     const factura = await prisma.factura.create({
       data: {
-        ...data,
+        ...facturaData,
         user_id: session.user.id,
         detalles: {
-          create: data.detalles,
+          create: facturaData.detalles,
         },
       },
       include: {

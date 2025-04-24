@@ -68,11 +68,18 @@ model Cliente {
   updatedAt    DateTime @updatedAt
 }
 
+// Enum para estados de factura
+enum EstadoFactura {
+  EMITIDA
+  NO_ENVIADA
+  ENVIADA
+  ANULADA
+}
+
 // Modelo de facturas
 
 model Factura {
   id                  Int              @id @default(autoincrement())
-  folio               Int              @unique
   tipoDTE             Int
   fechaEmision        DateTime         @default(now())
   razonSocialEmisor   String
@@ -81,12 +88,13 @@ model Factura {
   razonSocialReceptor String
   direccionReceptor   String
   comunaReceptor      String
-  ciudadReceptor      String?
+  ciudadReceptor      String?         // Opcional para casos donde no se requiere la ciudad
+  contactoReceptor    String?         // Opcional para casos donde no hay contacto específico
   montoNeto           Decimal          @db.Decimal(10, 2)
   iva                 Decimal          @db.Decimal(10, 2)
   montoTotal          Decimal          @db.Decimal(10, 2)
-  estado              String           @default("emitida")
-  observaciones       String?
+  estado              EstadoFactura    @default(EMITIDA)
+  observaciones       String?          // Opcional para notas o comentarios adicionales
   user_id             String           @db.Uuid
   user                User             @relation(fields: [user_id], references: [id])
   detalles            DetalleFactura[]
@@ -101,7 +109,7 @@ model DetalleFactura {
   cantidad    Int
   descripcion String
   precioUnit  Decimal  @db.Decimal(10, 2)
-  descuento   Decimal  @db.Decimal(5, 2) @default(0)
+  descuento   Decimal  @db.Decimal(10, 2) @default(0)    // Ajustado para soportar montos mayores
   montoNeto   Decimal  @db.Decimal(10, 2)
   factura_id  Int
   factura     Factura  @relation(fields: [factura_id], references: [id])

@@ -32,7 +32,7 @@ export function AlertDelete({
           <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
           <AlertDialogDescription>
             Esta acción no se puede deshacer. Se eliminará permanentemente la
-            factura con folio {factura.folio} y todos sus detalles asociados.
+            factura y todos sus detalles asociados.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

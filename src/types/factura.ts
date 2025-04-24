@@ -1,6 +1,17 @@
+export interface DetalleFactura {
+  id: number;
+  cantidad: number;
+  descripcion: string;
+  precioUnit: number;
+  descuento: number;
+  montoNeto: number;
+  factura_id: number;
+}
+
+export type DetalleFacturaSinId = Omit<DetalleFactura, "id" | "factura_id">;
+
 export interface Factura {
   id: number;
-  folio: number;
   tipoDTE: number;
   fechaEmision: Date;
   razonSocialEmisor: string;
@@ -19,14 +30,4 @@ export interface Factura {
   detalles: DetalleFactura[];
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface DetalleFactura {
-  id: number;
-  cantidad: number;
-  descripcion: string;
-  precioUnit: number;
-  descuento: number;
-  montoNeto: number;
-  factura_id: number;
 }

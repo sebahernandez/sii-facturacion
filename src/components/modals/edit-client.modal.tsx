@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Cliente } from "@/types/cliente";
 import { toast } from "sonner";
+import { formatRut } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -33,6 +34,9 @@ export default function ClienteEditModal({
   }, [cliente]);
 
   const handleChange = (field: string, value: string) => {
+    if (field === "rut") {
+      value = formatRut(value);
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -57,7 +61,7 @@ export default function ClienteEditModal({
             <Input
               value={form.rut}
               onChange={(e) => handleChange("rut", e.target.value)}
-              placeholder="12.345.678-9"
+              placeholder="76123456-7"
             />
           </div>
 

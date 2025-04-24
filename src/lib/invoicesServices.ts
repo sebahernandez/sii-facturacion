@@ -1,4 +1,4 @@
-import { Factura } from "@/types/factura";
+import { Factura, DetalleFacturaSinId } from "@/types/factura";
 
 export const fetchFacturas = async (
   signal?: AbortSignal
@@ -41,9 +41,24 @@ export const updateFactura = async (factura: Factura): Promise<Factura> => {
   return response.json();
 };
 
-export const createFactura = async (
-  factura: Omit<Factura, "id" | "createdAt" | "updatedAt">
-): Promise<Factura> => {
+export const createFactura = async (factura: {
+  tipoDTE: number;
+  fechaEmision: Date;
+  razonSocialEmisor: string;
+  rutEmisor: string;
+  rutReceptor: string;
+  razonSocialReceptor: string;
+  direccionReceptor: string;
+  comunaReceptor: string;
+  ciudadReceptor?: string;
+  montoNeto: number;
+  iva: number;
+  montoTotal: number;
+  estado: string;
+  observaciones?: string;
+  user_id: string;
+  detalles: DetalleFacturaSinId[];
+}): Promise<Factura> => {
   const response = await fetch("/api/facturas", {
     method: "POST",
     headers: {

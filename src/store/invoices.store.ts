@@ -1,18 +1,37 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { Factura } from "@/types/factura";
+import { Factura, DetalleFacturaSinId } from "@/types/factura";
 import {
   fetchFacturas,
   deleteFactura,
   updateFactura,
+  createFactura,
 } from "@/lib/invoicesServices";
 
 interface InvoiceStore {
   facturas: Factura[] | null;
   isLoading: boolean;
   fetchInvoices: (signal?: AbortSignal) => Promise<void>;
-  eliminarFactura: (id: number, folio: number) => Promise<boolean>;
+  eliminarFactura: (id: number) => Promise<boolean>;
   editarFactura: (factura: Factura) => Promise<boolean>;
+  crearFactura: (factura: {
+    tipoDTE: number;
+    fechaEmision: Date;
+    razonSocialEmisor: string;
+    rutEmisor: string;
+    rutReceptor: string;
+    razonSocialReceptor: string;
+    direccionReceptor: string;
+    comunaReceptor: string;
+    ciudadReceptor?: string;
+    montoNeto: number;
+    iva: number;
+    montoTotal: number;
+    estado: string;
+    observaciones?: string;
+    user_id: string;
+    detalles: DetalleFacturaSinId[];
+  }) => Promise<Factura | null>;
   setFacturas: (facturas: Factura[]) => void;
   resetFacturas: () => void;
 }
@@ -41,7 +60,7 @@ const useInvoiceStore = create<InvoiceStore>((set, get) => ({
     }
   },
 
-  eliminarFactura: async (id: number, folio: number) => {
+  eliminarFactura: async (id: number) => {
     try {
       await deleteFactura(id);
 
@@ -49,7 +68,7 @@ const useInvoiceStore = create<InvoiceStore>((set, get) => ({
       resetFacturas();
       await fetchInvoices();
 
-      toast.success(`Factura N° ${folio} eliminada exitosamente`);
+      toast.success(`Factura #${id} eliminada exitosamente`);
       return true;
     } catch (error) {
       console.error(error);
@@ -66,12 +85,46 @@ const useInvoiceStore = create<InvoiceStore>((set, get) => ({
       resetFacturas();
       await fetchInvoices();
 
-      toast.success(`Factura N° ${factura.folio} editada exitosamente`);
+      toast.success(`Factura #${factura.id} editada exitosamente`);
       return true;
     } catch (error) {
       console.error(error);
       toast.error("Error al editar factura");
       return false;
+    }
+  },
+
+  crearFactura: async (factura: {
+    tipoDTE: number;
+    fechaEmision: Date;
+    razonSocialEmisor: string;
+    rutEmisor: string;
+    rutReceptor: string;
+    razonSocialReceptor: string;
+    direccionReceptor: string;
+    comunaReceptor: string;
+    ciudadReceptor?: string;
+    montoNeto: number;
+    iva: number;
+    montoTotal: number;
+    estado: string;
+    observaciones?: string;
+    user_id: string;
+    detalles: DetalleFacturaSinId[];
+  }) => {
+    try {
+      const nuevaFactura = await createFactura(factura);
+
+      const { resetFacturas, fetchInvoices } = get();
+      resetFacturas();
+      await fetchInvoices();
+
+      toast.success(`Factura #${nuevaFactura.id} creada exitosamente`);
+      return nuevaFactura;
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al crear factura");
+      return null;
     }
   },
 

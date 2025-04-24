@@ -30,7 +30,7 @@ export function DataTable({ data, onEditar }: DataTableProps) {
       factura.razonSocialReceptor
         .toLowerCase()
         .includes(filtro.toLowerCase()) ||
-      factura.folio.toString().includes(filtro)
+      factura.id.toString().includes(filtro)
   );
 
   return (
@@ -71,7 +71,8 @@ export function DataTable({ data, onEditar }: DataTableProps) {
           ) : (
             facturasFiltradas.map((factura) => (
               <TableRow key={factura.id}>
-                <TableCell>{factura.folio}</TableCell>
+                <TableCell>{factura.id}</TableCell>
+                {/* Formatear la fecha */}
                 <TableCell>
                   {new Date(factura.fechaEmision).toLocaleDateString()}
                 </TableCell>
