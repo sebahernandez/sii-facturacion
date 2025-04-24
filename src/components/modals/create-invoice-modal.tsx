@@ -21,7 +21,8 @@ import { SearchClient } from "@/components/clients/search-client";
 import { SearchProduct } from "@/components/products/search-product";
 import { Producto } from "@/types/producto";
 import { Detalles } from "@/types/detalles";
-import { DetalleFacturaSinId } from "@/types/factura";
+import { FacturaCreate } from "@/types/factura";
+import { FormData } from "@/types/formData";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TablaDetallesEditable } from "@/components/invoice/tabla-detalles-editable";
 import {
@@ -37,50 +38,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { formatRut } from "@/lib/utils";
-
-type FacturaCreate = {
-  tipoDTE: number;
-  fechaEmision: Date;
-  razonSocialEmisor: string;
-  rutEmisor: string;
-  rutReceptor: string;
-  razonSocialReceptor: string;
-  direccionReceptor: string;
-  comunaReceptor: string;
-  ciudadReceptor?: string;
-  contactoReceptor?: string;
-  montoNeto: number;
-  iva: number;
-  montoTotal: number;
-  estado: string;
-  observaciones?: string;
-  user_id: string;
-  detalles: DetalleFacturaSinId[];
-};
-
 interface CreateInvoiceModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-interface FormData {
-  tipoDTE: number;
-  fechaEmision: string;
-  rutReceptor: string;
-  razonSocialReceptor: string;
-  direccionReceptor: string;
-  comunaReceptor: string;
-  contactoReceptor?: string;
-  observaciones?: string;
-  montoNeto: number;
-  iva: number;
-  montoTotal: number;
-  estado: "EMITIDA" | "NO_ENVIADA" | "ENVIADA" | "ANULADA";
-  detalles: DetalleFacturaSinId[];
-}
-
 export default function InvoiceCreateModal({
   open,
   onClose,
@@ -162,14 +124,16 @@ export default function InvoiceCreateModal({
     );
   };
 
+  // Funciones para abrir/cerrar acordeones
   const toggleProductsAccordion = () => {
     setProductsAccordionOpen(!productsAccordionOpen);
   };
 
+  // Función para abrir/cerrar acordeón de items
   const toggleItemsAccordion = () => {
     setItemsAccordionOpen(!itemsAccordionOpen);
   };
-
+  // Función para abrir/cerrar acordeón de montos
   const toggleMontosAccordion = () => {
     setMontosAccordionOpen(!montosAccordionOpen);
   };
@@ -190,10 +154,10 @@ export default function InvoiceCreateModal({
       | `detalles.${number}.precioUnit`
       | `detalles.${number}.descuento`
       | `detalles.${number}.montoNeto`,
-    value: string
+    value: string | number
   ) => {
-    if (field === "rutReceptor") {
-      value = formatRut(value);
+    if (field.includes("monto") || field.includes("precioUnit")) {
+      value = parseFloat(value.toString());
     }
     form.setValue(field, value);
   };
@@ -201,34 +165,38 @@ export default function InvoiceCreateModal({
   const onSubmit = async (formData: FormData) => {
     try {
       console.log("Form submitted with data:", formData);
-      // Validar datos del receptor
-      if (!formData.rutReceptor?.trim()) {
-        toast.error("Debe ingresar el RUT del receptor");
-        return;
-      }
-      if (!formData.razonSocialReceptor?.trim()) {
-        toast.error("Debe ingresar la razón social del receptor");
-        return;
-      }
-      if (!formData.direccionReceptor?.trim()) {
-        toast.error("Debe ingresar la dirección del receptor");
-        return;
-      }
-      if (!formData.comunaReceptor?.trim()) {
-        toast.error("Debe ingresar la comuna del receptor");
-        return;
-      }
+      const validations = [
+        {
+          field: formData.rutReceptor,
+          message: "Debe ingresar el RUT del receptor",
+        },
+        {
+          field: formData.razonSocialReceptor,
+          message: "Debe ingresar la razón social del receptor",
+        },
+        {
+          field: formData.direccionReceptor,
+          message: "Debe ingresar la dirección del receptor",
+        },
+        {
+          field: formData.comunaReceptor,
+          message: "Debe ingresar la comuna del receptor",
+        },
+        {
+          field: formData.fechaEmision,
+          message: "Debe seleccionar una fecha de emisión",
+        },
+        {
+          field: detalles.length > 0 ? "ok" : "", // para que pase el `.trim()`
+          message: "Debe agregar al menos un producto",
+        },
+      ];
 
-      // Validar fecha de emisión
-      if (!formData.fechaEmision) {
-        toast.error("Debe seleccionar una fecha de emisión");
-        return;
-      }
-
-      // Validar detalles/productos
-      if (detalles.length === 0) {
-        toast.error("Debe agregar al menos un producto");
-        return;
+      for (const { field, message } of validations) {
+        if (!field?.toString().trim()) {
+          toast.error(message);
+          return;
+        }
       }
 
       setIsLoading(true);
@@ -248,7 +216,12 @@ export default function InvoiceCreateModal({
       // Obtener los datos de emisor desde la sesión
       const { session } = useAuthStore.getState();
 
-      // Transformar los detalles
+      /* Transformar los detalles
+      Asegurarse de que los detalles tengan el tipo correcto
+      y convertir los valores a números
+      y asegurarse de que los valores sean números
+      y no cadenas y que los campos sean correctos */
+
       const detallesTransformados = detalles.map((detalle) => ({
         cantidad: detalle.cantidad,
         descripcion: detalle.descripcion,
