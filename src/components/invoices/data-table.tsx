@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FiEdit3 } from "react-icons/fi";
+import { MdDelete } from "react-icons/md";
 import { Factura } from "@/types/factura";
 import { Progress } from "@/components/ui/progress";
 import useInvoiceStore from "@/store/invoices.store";
@@ -19,9 +20,10 @@ import useInvoiceStore from "@/store/invoices.store";
 interface DataTableProps {
   data: Factura[];
   onEditar: (factura: Factura) => void;
+  onEliminar: (id: number) => void;
 }
 
-export function DataTable({ data, onEditar }: DataTableProps) {
+export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
   const [filtro, setFiltro] = useState("");
   const { isLoading } = useInvoiceStore();
 
@@ -45,7 +47,7 @@ export function DataTable({ data, onEditar }: DataTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Folio</TableHead>
+            <TableHead>ID</TableHead>
             <TableHead>Fecha Emisión</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>Monto Neto</TableHead>
@@ -86,14 +88,24 @@ export function DataTable({ data, onEditar }: DataTableProps) {
                 </TableCell>
                 <TableCell>{factura.estado}</TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onEditar(factura)}
-                    className="cursor-pointer"
-                  >
-                    <FiEdit3 className="mr-2" /> Editar
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEditar(factura)}
+                      className="cursor-pointer"
+                    >
+                      <FiEdit3 className="mr-1" /> Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => onEliminar(factura.id)}
+                      className="cursor-pointer"
+                    >
+                      <MdDelete className="mr-1" /> Eliminar
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

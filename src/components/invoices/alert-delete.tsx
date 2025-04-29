@@ -8,35 +8,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Factura } from "@/types/factura";
 
 interface AlertDeleteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  factura?: Factura;
+  onCancel?: () => void;
+  title?: string;
+  description?: string;
 }
 
 export function AlertDelete({
   open,
   onOpenChange,
   onConfirm,
-  factura,
+  onCancel,
+  title = "¿Estás absolutamente seguro?",
+  description = "Esta acción no se puede deshacer. Se eliminará permanentemente el registro.",
 }: AlertDeleteProps) {
-  if (!factura) return null;
-
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. Se eliminará permanentemente la
-            factura y todos sus detalles asociados.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>Eliminar</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

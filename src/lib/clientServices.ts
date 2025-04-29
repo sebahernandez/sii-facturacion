@@ -38,7 +38,7 @@ export const fetchClients = async (
 // Si la solicitud es exitosa, se devuelve true. En caso de error, se lanza una excepción.
 export const updateClient = async (cliente: Cliente): Promise<boolean> => {
   const { id, ...rest } = cliente;
-  const res = await fetch(`/api/clientes/${id}`, {
+  const res = await fetch(`/api/clientes?id=${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -55,7 +55,7 @@ export const updateClient = async (cliente: Cliente): Promise<boolean> => {
 // Se realiza una solicitud DELETE a la API con el ID del cliente.
 // Si la solicitud es exitosa, se devuelve true. En caso de error, se lanza una excepción.
 export const deleteClient = async (id: number): Promise<boolean> => {
-  const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+  const res = await fetch(`/api/clientes?id=${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Error al eliminar");
 
   return true;

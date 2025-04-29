@@ -13,7 +13,7 @@ export const fetchProductos = async (
 };
 
 export const deleteProducto = async (id: number): Promise<boolean> => {
-  const response = await fetch(`/api/productos/${id}`, {
+  const response = await fetch(`/api/productos?id=${id}`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -24,7 +24,7 @@ export const deleteProducto = async (id: number): Promise<boolean> => {
 
 export const updateProducto = async (producto: Producto): Promise<Producto> => {
   const { id, ...rest } = producto;
-  const response = await fetch(`/api/productos/${id}`, {
+  const response = await fetch(`/api/productos?id=${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

@@ -13,7 +13,7 @@ export const fetchFacturas = async (
 };
 
 export const deleteFactura = async (id: number): Promise<boolean> => {
-  const response = await fetch(`/api/facturas/${id}`, {
+  const response = await fetch(`/api/facturas?id=${id}`, {
     method: "DELETE",
   });
 
@@ -26,7 +26,7 @@ export const deleteFactura = async (id: number): Promise<boolean> => {
 
 export const updateFactura = async (factura: Factura): Promise<Factura> => {
   const { id, ...rest } = factura;
-  const response = await fetch(`/api/facturas/${id}`, {
+  const response = await fetch(`/api/facturas?id=${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

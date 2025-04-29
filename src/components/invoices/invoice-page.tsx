@@ -8,13 +8,18 @@ import InvoiceCreateModal from "@/components/modals/create-invoice-modal";
 import InvoiceEditModal from "@/components/modals/edit-invoice-modal";
 import { Factura } from "@/types/factura";
 import useInvoiceStore from "@/store/invoices.store";
+import { AlertDelete } from "./alert-delete";
 
 export default function InvoicePage() {
-  const { facturas, fetchInvoices } = useInvoiceStore();
+  const { facturas, fetchInvoices, eliminarFactura } = useInvoiceStore();
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [facturaSeleccionada, setFacturaSeleccionada] =
     useState<Factura | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [idFacturaEliminar, setIdFacturaEliminar] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     fetchInvoices();
@@ -30,6 +35,25 @@ export default function InvoicePage() {
     setEditOpen(true);
   };
 
+  const handleEliminar = (id: number) => {
+    setIdFacturaEliminar(id);
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (idFacturaEliminar) {
+      try {
+        const resultado = await eliminarFactura(idFacturaEliminar);
+        if (resultado) {
+          setDeleteAlertOpen(false);
+          setIdFacturaEliminar(null);
+        }
+      } catch (error) {
+        console.error("Error al eliminar factura:", error);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto mt-10">
       <div className="flex justify-between items-center mb-4">
@@ -39,7 +63,13 @@ export default function InvoicePage() {
         </Button>
       </div>
 
-      {<DataTable data={facturas || []} onEditar={handleEditar} />}
+      {
+        <DataTable
+          data={facturas || []}
+          onEditar={handleEditar}
+          onEliminar={handleEliminar}
+        />
+      }
 
       <InvoiceCreateModal
         open={createOpen}
@@ -61,6 +91,18 @@ export default function InvoicePage() {
           }}
         />
       )}
+
+      <AlertDelete
+        open={deleteAlertOpen}
+        onOpenChange={setDeleteAlertOpen}
+        onConfirm={confirmarEliminar}
+        onCancel={() => {
+          setDeleteAlertOpen(false);
+          setIdFacturaEliminar(null);
+        }}
+        title="¿Eliminar factura?"
+        description={`¿Estás seguro de que quieres eliminar la factura #${idFacturaEliminar}? Esta acción no se puede deshacer.`}
+      />
     </div>
   );
 }
