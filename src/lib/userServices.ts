@@ -36,6 +36,28 @@ export async function guardarConfiguracion(datosEmpresa: {
   }
 }
 
+// Obtener la configuración de la empresa del usuario actual
+export async function obtenerConfiguracion() {
+  try {
+    const response = await fetch("/api/obtener-configuracion");
+
+    if (!response.ok) {
+      throw new Error("No se pudo obtener la configuración");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error al obtener configuración:", error);
+    toast.error("No se pudo cargar la configuración del usuario");
+    return {
+      rutEmpresa: "",
+      razonSocial: "",
+      giro: "",
+      direccion: "",
+    };
+  }
+}
+
 // Obtener el token de SII
 export async function obtenerToken(
   file: File,
