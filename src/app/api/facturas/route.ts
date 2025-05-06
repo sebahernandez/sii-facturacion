@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient, EstadoFactura } from "@prisma/client";
 import { invoiceSchema } from "@/lib/zod";
-import { Factura } from "@/types/factura";
 
 const prisma = new PrismaClient();
 
@@ -37,8 +36,9 @@ export async function GET() {
     );
   }
 }
+
 // Crear una nueva factura
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -47,15 +47,24 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    const { ...facturaData } = data;
-    console.log("facturaData", facturaData);
+    const validation = invoiceSchema.safeParse(data);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          message: "Datos inválidos",
+          errors: validation.error.format(),
+        },
+        { status: 400 }
+      );
+    }
 
     const factura = await prisma.factura.create({
       data: {
-        ...facturaData,
+        ...data,
         user_id: session.user.id,
         detalles: {
-          create: facturaData.detalles,
+          create: data.detalles,
         },
       },
       include: {
@@ -72,13 +81,18 @@ export async function POST(request: Request) {
     );
   }
 }
-// Actualizar una factura
-export async function PUT(request: Request) {
+
+// Actualizar una factura existente
+export async function PUT(request: NextRequest) {
   try {
-    // Obtener el ID de los parámetros de búsqueda
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    // Obtener el ID desde los query params
     const url = new URL(request.url);
     const idStr = url.searchParams.get("id");
-
     if (!idStr) {
       return NextResponse.json(
         { error: "ID no proporcionado" },
@@ -91,27 +105,22 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    // Verificar autenticación
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    // Verificar que la factura existe y pertenece al usuario
+    const existingFactura = await prisma.factura.findFirst({
+      where: {
+        id,
+        user_id: session.user.id,
+      },
+    });
+
+    if (!existingFactura) {
+      return NextResponse.json(
+        { error: "Factura no encontrada" },
+        { status: 404 }
+      );
     }
 
-    const data = (await request.json()) as Omit<
-      Factura,
-      "id" | "detalles" | "createdAt" | "updatedAt"
-    > & {
-      detalles: {
-        cantidad: number;
-        descripcion: string;
-        precioUnit: number;
-        descuento: number;
-        montoNeto: number;
-      }[];
-      tipoDTE: string;
-    };
-
-    console.log("DATA RECIBIDA:", data);
+    const data = await request.json();
 
     // Validar datos con Zod
     const validation = invoiceSchema.safeParse(data);
@@ -125,9 +134,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Convertir la cadena de estado a un valor válido del enum EstadoFactura
+    // Convertir el estado a enum
     let estadoFactura: EstadoFactura;
-
     switch (data.estado) {
       case "EMITIDA":
         estadoFactura = EstadoFactura.EMITIDA;
@@ -142,8 +150,7 @@ export async function PUT(request: Request) {
         estadoFactura = EstadoFactura.ANULADA;
         break;
       default:
-        // Si el valor no coincide con ninguno del enum, usar un valor por defecto
-        estadoFactura = EstadoFactura.EMITIDA;
+        estadoFactura = EstadoFactura.NO_ENVIADA;
     }
 
     // Actualizar la factura
@@ -153,31 +160,35 @@ export async function PUT(request: Request) {
         user_id: session.user.id,
       },
       data: {
-        tipoDTE: parseInt(data.tipoDTE, 10),
-        fechaEmision: data.fechaEmision,
-        razonSocialEmisor: data.razonSocialEmisor,
-        rutEmisor: data.rutEmisor,
+        tipoDTE: data.tipoDTE,
+        fechaEmision: new Date(data.fechaEmision),
         rutReceptor: data.rutReceptor,
         razonSocialReceptor: data.razonSocialReceptor,
         direccionReceptor: data.direccionReceptor,
         comunaReceptor: data.comunaReceptor,
-        ciudadReceptor: data.ciudadReceptor,
+        contactoReceptor: data.contactoReceptor,
         montoNeto: data.montoNeto,
         iva: data.iva,
         montoTotal: data.montoTotal,
-        estado: estadoFactura, // Usamos el valor del enum en lugar del string
+        estado: estadoFactura,
         observaciones: data.observaciones,
         detalles: {
           deleteMany: {},
-          createMany: {
-            data: data.detalles.map((detalle) => ({
+          create: data.detalles.map(
+            (detalle: {
+              cantidad: number;
+              descripcion: string;
+              precioUnit: number;
+              descuento: number;
+              montoNeto: number;
+            }) => ({
               cantidad: detalle.cantidad,
               descripcion: detalle.descripcion,
               precioUnit: detalle.precioUnit,
               descuento: detalle.descuento,
               montoNeto: detalle.montoNeto,
-            })),
-          },
+            })
+          ),
         },
       },
       include: {
@@ -194,10 +205,10 @@ export async function PUT(request: Request) {
     );
   }
 }
-// Eliminación de una factura
-export async function DELETE(request: Request) {
+
+// Eliminar una factura
+export async function DELETE(request: NextRequest) {
   try {
-    // Obtener el ID de los parámetros de búsqueda
     const url = new URL(request.url);
     const idStr = url.searchParams.get("id");
 
@@ -210,27 +221,21 @@ export async function DELETE(request: Request) {
 
     const idNumber = Number(idStr);
     if (isNaN(idNumber)) {
-      console.log("ID inválido: no es un número");
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    console.log("ID a eliminar:", idNumber);
-    console.log("Tipo de dato:", typeof idNumber);
-
-    // Verificar autenticación
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Primero, eliminar los detalles relacionados
+    // Eliminar los detalles y la factura
     await prisma.detalleFactura.deleteMany({
       where: {
         factura_id: idNumber,
       },
     });
 
-    // Luego, eliminar la factura
     await prisma.factura.delete({
       where: {
         id: idNumber,

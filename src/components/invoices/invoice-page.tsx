@@ -9,6 +9,7 @@ import InvoiceEditModal from "@/components/modals/edit-invoice-modal";
 import { Factura } from "@/types/factura";
 import useInvoiceStore from "@/store/invoices.store";
 import { AlertDelete } from "./alert-delete";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function InvoicePage() {
   const { facturas, fetchInvoices, eliminarFactura } = useInvoiceStore();
@@ -21,9 +22,23 @@ export default function InvoicePage() {
     null
   );
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const facturaId = searchParams.get("id");
+
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  useEffect(() => {
+    if (facturaId && facturas) {
+      const factura = facturas.find((f) => f.id === parseInt(facturaId));
+      if (factura) {
+        setFacturaSeleccionada(factura);
+        setEditOpen(true);
+      }
+    }
+  }, [facturaId, facturas]);
 
   const handleNuevo = () => {
     setFacturaSeleccionada(null);
@@ -31,8 +46,13 @@ export default function InvoicePage() {
   };
 
   const handleEditar = (factura: Factura) => {
-    setFacturaSeleccionada(factura);
-    setEditOpen(true);
+    router.push(`/dashboard/facturas?id=${factura.id}`);
+  };
+
+  const handleCloseEditModal = () => {
+    router.push("/dashboard/facturas");
+    setEditOpen(false);
+    setFacturaSeleccionada(null);
   };
 
   const handleEliminar = (id: number) => {
@@ -47,6 +67,7 @@ export default function InvoicePage() {
         if (resultado) {
           setDeleteAlertOpen(false);
           setIdFacturaEliminar(null);
+          await fetchInvoices();
         }
       } catch (error) {
         console.error("Error al eliminar factura:", error);
@@ -63,13 +84,11 @@ export default function InvoicePage() {
         </Button>
       </div>
 
-      {
-        <DataTable
-          data={facturas || []}
-          onEditar={handleEditar}
-          onEliminar={handleEliminar}
-        />
-      }
+      <DataTable
+        data={facturas || []}
+        onEditar={handleEditar}
+        onEliminar={handleEliminar}
+      />
 
       <InvoiceCreateModal
         open={createOpen}
@@ -83,11 +102,11 @@ export default function InvoicePage() {
       {facturaSeleccionada && (
         <InvoiceEditModal
           open={editOpen}
-          onClose={() => setEditOpen(false)}
+          onClose={handleCloseEditModal}
           factura={facturaSeleccionada}
           onSuccess={() => {
             fetchInvoices();
-            setEditOpen(false);
+            handleCloseEditModal();
           }}
         />
       )}

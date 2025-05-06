@@ -25,16 +25,34 @@ export const deleteFactura = async (id: number): Promise<boolean> => {
 };
 
 export const updateFactura = async (factura: Factura): Promise<Factura> => {
-  const { id, ...rest } = factura;
-  const response = await fetch(`/api/facturas?id=${id}`, {
+  console.log("Datos enviados a la API:", factura); // Log para depuración
+
+  // Asegurarse de que los detalles tengan valores numéricos
+  const detallesConNumeros = factura.detalles.map((detalle) => ({
+    ...detalle,
+    precioUnit: Number(detalle.precioUnit),
+    descuento: Number(detalle.descuento),
+    montoNeto: Number(detalle.montoNeto),
+    cantidad: Number(detalle.cantidad),
+  }));
+
+  const facturaFormateada = {
+    ...factura,
+    detalles: detallesConNumeros,
+  };
+
+  const response = await fetch(`/api/facturas?id=${factura.id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(rest),
+    body: JSON.stringify(facturaFormateada),
   });
 
+  console.log("Respuesta de la API:", response); // Log para depuración
+
   if (!response.ok) {
+    console.error("Error HTTP:", response.status, await response.text()); // Log detallado del error
     throw new Error(`Error HTTP: ${response.status}`);
   }
 

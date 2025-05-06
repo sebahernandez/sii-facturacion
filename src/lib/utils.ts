@@ -6,17 +6,28 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatRut(rut: string): string {
-  // Eliminar puntos y guión si existen
-  let clean = rut.replace(/[.-]/g, "");
+  // Eliminar caracteres no deseados y obtener dígito verificador
+  const rutLimpio = rut.replace(/[^0-9kK]/g, "");
 
-  // Validar que solo contenga números y opcionalmente una K al final
-  if (!/^[0-9]+[kK]?$/.test(clean)) {
-    return clean;
-  }
+  // Si el RUT está vacío, retornar vacío
+  if (rutLimpio.length === 0) return "";
 
-  // Separar el dígito verificador
-  const dv = clean.slice(-1);
-  const rutNumeros = clean.slice(0, -1);
+  // Separar el número del dígito verificador
+  const dv = rutLimpio.slice(-1);
+  const numero = rutLimpio.slice(0, -1);
 
-  return `${rutNumeros}-${dv}`;
+  // Si no hay número, retornar solo el dígito verificador
+  if (numero.length === 0) return dv;
+
+  // Formatear con puntos y guión
+  return numero.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "-" + dv;
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }

@@ -20,6 +20,7 @@ export interface Factura {
   razonSocialReceptor: string;
   direccionReceptor: string;
   comunaReceptor: string;
+  contactoReceptor?: string;
   ciudadReceptor?: string;
   montoNeto: number;
   iva: number;

@@ -1,82 +1,61 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// conectar base de datos postgres en render.com
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Modelo de usuario
 model User {
-  id          String     @id @default(uuid()) @db.Uuid
-  name        String
-  email       String     @unique
-  password    String
-  rutEmpresa  String?
-  razonSocial String?
-  giro        String?
-  direccion   String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  products    Producto[] // Relación uno a muchos con Producto
-  clientes    Cliente[]  // Relación uno a muchos con Cliente
-  facturas    Factura[]  // Relación uno a muchos con Factura
+  id              String     @id @default(uuid()) @db.Uuid
+  name            String
+  email           String     @unique
+  password        String
+  rutEmpresa      String?
+  razonSocial     String?
+  giro            String?
+  direccion       String?
+  certificateToken String?   // Campo para almacenar el token del certificado digital
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  clientes        Cliente[]
+  facturas        Factura[]
+  products        Producto[]
 }
 
-// Modelo de producto
 model Producto {
-  id             Int       @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   codigo         String
   descripcion    String
   cantidad       Int
   unidadMedida   String
   precioUnitario Decimal
-  descuento      Decimal   @default(0.00)
+  descuento      Decimal  @default(0.00)
   montoNeto      Decimal
-  iva            Decimal   @default(12.00)
+  iva            Decimal  @default(12.00)
   montoTotal     Decimal
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  user_id        String    @db.Uuid // Clave foránea hacia User
-  user           User      @relation(fields: [user_id], references: [id]) // Relación inversa
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user_id        String   @db.Uuid
+  user           User     @relation(fields: [user_id], references: [id])
 }
-
-
-// Modelo de clientes
 
 model Cliente {
-  id           Int      @id @default(autoincrement())
-  rut          String   @unique
-  razonSocial  String
-  giro         String
-  direccion    String
-  comuna       String
-  ciudad       String?
-  contacto     String?
-  telefono     String?
-  user_id      String   @db.Uuid // Clave foránea hacia el usuario que crea el cliente
-  user         User     @relation(fields: [user_id], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  rut         String   @unique
+  razonSocial String
+  giro        String
+  direccion   String
+  comuna      String
+  ciudad      String?
+  contacto    String?
+  telefono    String?
+  user_id     String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [user_id], references: [id])
 }
-
-// Enum para estados de factura
-enum EstadoFactura {
-  EMITIDA
-  NO_ENVIADA
-  ENVIADA
-  ANULADA
-}
-
-// Modelo de facturas
 
 model Factura {
   id                  Int              @id @default(autoincrement())
@@ -88,32 +67,38 @@ model Factura {
   razonSocialReceptor String
   direccionReceptor   String
   comunaReceptor      String
-  ciudadReceptor      String?         // Opcional para casos donde no se requiere la ciudad
-  contactoReceptor    String?         // Opcional para casos donde no hay contacto específico
+  ciudadReceptor      String?
+  contactoReceptor    String?
   montoNeto           Decimal          @db.Decimal(10, 2)
   iva                 Decimal          @db.Decimal(10, 2)
   montoTotal          Decimal          @db.Decimal(10, 2)
   estado              EstadoFactura    @default(EMITIDA)
-  observaciones       String?          // Opcional para notas o comentarios adicionales
+  observaciones       String?
   user_id             String           @db.Uuid
-  user                User             @relation(fields: [user_id], references: [id])
-  detalles            DetalleFactura[]
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
+  detalles            DetalleFactura[]
+  user                User             @relation(fields: [user_id], references: [id])
 
   @@index([user_id])
 }
 
 model DetalleFactura {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   cantidad    Int
   descripcion String
-  precioUnit  Decimal  @db.Decimal(10, 2)
-  descuento   Decimal  @db.Decimal(10, 2) @default(0)    // Ajustado para soportar montos mayores
-  montoNeto   Decimal  @db.Decimal(10, 2)
+  precioUnit  Decimal @db.Decimal(10, 2)
+  descuento   Decimal @default(0) @db.Decimal(10, 2)
+  montoNeto   Decimal @db.Decimal(10, 2)
   factura_id  Int
-  factura     Factura  @relation(fields: [factura_id], references: [id])
+  factura     Factura @relation(fields: [factura_id], references: [id])
 
   @@index([factura_id])
 }
 
+enum EstadoFactura {
+  EMITIDA
+  NO_ENVIADA
+  ENVIADA
+  ANULADA
+}

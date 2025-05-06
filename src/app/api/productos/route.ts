@@ -1,25 +1,32 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
 import { Producto } from "@/types/producto";
+import { headers, cookies } from "next/headers";
 
-const prisma = new PrismaClient();
+import { PrismaClient } from "@prisma/client";
+// Singleton de Prisma para evitar múltiples instancias en desarrollo
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const prisma = globalForPrisma.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// obtener productos
 export async function GET() {
-  // Obtener la sesión del usuario
-  const session = await getServerSession(authOptions);
-  // Si no hay sesión, retornar un error 401
-  if (!session?.user)
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  // 1) Inicializar contexto HTTP
+  void (await headers());
+  void (await cookies());
 
+  // 2) Leer sesión
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  // 3) Lógica de negocio
   try {
     const productos = await prisma.producto.findMany({
       where: { user_id: session.user.id },
       orderBy: { createdAt: "desc" },
     });
-
     return NextResponse.json(productos);
   } catch (error) {
     console.error("Error al obtener productos:", error);
@@ -30,27 +37,20 @@ export async function GET() {
   }
 }
 
-// crear un producto
-export async function POST(req: Request) {
-  // Obtener la sesión del usuario
+export async function POST(req: NextRequest) {
+  void (await headers());
+  void (await cookies());
+
   const session = await getServerSession(authOptions);
-  // Si no hay sesión, retornar un error 401
-  if (!session?.user)
+  if (!session?.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
 
   try {
-    // Obtener el cuerpo de la petición
     const body = await req.json();
-
-    // Crear un nuevo producto
     const nuevoProducto = await prisma.producto.create({
-      data: {
-        ...body,
-        user_id: session.user.id,
-      },
+      data: { ...body, user_id: session.user.id },
     });
-
-    // Retornar el producto creado
     return NextResponse.json(nuevoProducto, { status: 201 });
   } catch (error) {
     console.error("Error al crear producto:", error);
@@ -61,53 +61,31 @@ export async function POST(req: Request) {
   }
 }
 
-// Actualizar un producto existente
-export async function PUT(request: Request) {
+export async function PUT(req: NextRequest) {
+  void (await headers());
+  void (await cookies());
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const idStr = url.searchParams.get("id");
+  if (!idStr) {
+    return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
+  }
+  const id = parseInt(idStr);
+  if (isNaN(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   try {
-    // Obtener el ID de los parámetros de búsqueda
-    const url = new URL(request.url);
-    const idStr = url.searchParams.get("id");
-
-    if (!idStr) {
-      return NextResponse.json(
-        { error: "ID no proporcionado" },
-        { status: 400 }
-      );
-    }
-
-    const id = parseInt(idStr);
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
-
-    // Verificar autenticación
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
-    // Obtener los datos del producto a actualizar
-    const data = (await request.json()) as Omit<Producto, "id">;
-
-    // Actualizar el producto
+    const data = (await req.json()) as Omit<Producto, "id">;
     const productoActualizado = await prisma.producto.update({
-      where: {
-        id,
-        user_id: session.user.id,
-      },
-      data: {
-        codigo: data.codigo,
-        descripcion: data.descripcion,
-        cantidad: data.cantidad,
-        unidadMedida: data.unidadMedida,
-        precioUnitario: data.precioUnitario,
-        descuento: data.descuento,
-        montoNeto: data.montoNeto,
-        iva: data.iva,
-        montoTotal: data.montoTotal,
-      },
+      where: { id, user_id: session.user.id },
+      data,
     });
-
     return NextResponse.json(productoActualizado);
   } catch (error) {
     console.error("Error al actualizar producto:", error);
@@ -118,39 +96,29 @@ export async function PUT(request: Request) {
   }
 }
 
-// Eliminar un producto existente
-export async function DELETE(request: Request) {
+export async function DELETE(req: NextRequest) {
+  void (await headers());
+  void (await cookies());
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const idStr = url.searchParams.get("id");
+  if (!idStr) {
+    return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
+  }
+  const id = parseInt(idStr);
+  if (isNaN(id)) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   try {
-    // Obtener el ID de los parámetros de búsqueda
-    const url = new URL(request.url);
-    const idStr = url.searchParams.get("id");
-
-    if (!idStr) {
-      return NextResponse.json(
-        { error: "ID no proporcionado" },
-        { status: 400 }
-      );
-    }
-
-    const idNumber = Number(idStr);
-    if (isNaN(idNumber)) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
-
-    // Verificar autenticación
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
-    // Eliminar el producto
     await prisma.producto.delete({
-      where: {
-        id: idNumber,
-        user_id: session.user.id,
-      },
+      where: { id, user_id: session.user.id },
     });
-
     return NextResponse.json({ message: "Producto eliminado con éxito" });
   } catch (error) {
     console.error("Error al eliminar producto:", error);

@@ -9,7 +9,6 @@ const prisma = new PrismaClient();
 
 // Obtener todos los clientes del usuario autenticado
 export async function GET() {
-  // Obtener la sesión del usuario
   const session = await getServerSession(authOptions);
 
   // Si no hay sesión, retornar un error 401
