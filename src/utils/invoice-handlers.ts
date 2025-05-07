@@ -100,24 +100,33 @@ export const handleDetalleChange = (
   setDetalles: React.Dispatch<React.SetStateAction<Detalles[]>>,
   setValue: UseFormSetValue<InvoiceFormData>
 ) => {
+  // Asegurarse de que value sea string o number, no un objeto vacío
+  if (typeof value === "object") {
+    // Si value es un objeto vacío, convertirlo a string vacío
+    value = "";
+  }
+
   const nuevosDetalles = detalles.map((detalle) => {
     if (detalle.descripcion === descripcion) {
       const nuevoDetalle = { ...detalle, [field]: value };
 
-      // Recalcular monto neto cuando cambia cantidad, precio o descuento
+      // Recalcular montoNeto si se cambió cantidad, precioUnit o descuento
       if (
         field === "cantidad" ||
         field === "precioUnit" ||
         field === "descuento"
       ) {
-        const cantidad =
-          field === "cantidad" ? Number(value) : detalle.cantidad;
-        const precioUnit =
-          field === "precioUnit" ? Number(value) : Number(detalle.precioUnit);
-        const descuento =
-          field === "descuento" ? Number(value) : Number(detalle.descuento);
-
-        nuevoDetalle.montoNeto = cantidad * precioUnit - descuento;
+        const cantidad = Number(
+          field === "cantidad" ? value : nuevoDetalle.cantidad
+        );
+        const precioUnit = Number(
+          field === "precioUnit" ? value : nuevoDetalle.precioUnit
+        );
+        const descuento = Number(
+          field === "descuento" ? value : nuevoDetalle.descuento
+        );
+        const montoNeto = cantidad * precioUnit * (1 - descuento / 100);
+        nuevoDetalle.montoNeto = montoNeto;
       }
 
       return nuevoDetalle;
