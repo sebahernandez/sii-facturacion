@@ -358,6 +358,7 @@ export const DasboardHome = () => {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead>Tipo DTE</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Monto</TableHead>
                   <TableHead>Estado</TableHead>
@@ -366,13 +367,13 @@ export const DasboardHome = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       Cargando facturas...
                     </TableCell>
                   </TableRow>
                 ) : ultimasFacturas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       No hay facturas registradas
                     </TableCell>
                   </TableRow>
@@ -381,6 +382,17 @@ export const DasboardHome = () => {
                     <TableRow key={factura.id}>
                       <TableCell>#{factura.id}</TableCell>
                       <TableCell>{factura.razonSocialReceptor}</TableCell>
+                      <TableCell>
+                        {factura.tipoDTE === 33
+                          ? "Factura Electrónica"
+                          : factura.tipoDTE === 34
+                          ? "Factura Exenta"
+                          : factura.tipoDTE === 56
+                          ? "Nota Débito"
+                          : factura.tipoDTE === 61
+                          ? "Nota Crédito"
+                          : `${factura.tipoDTE}`}
+                      </TableCell>
                       <TableCell>
                         {format(new Date(factura.fechaEmision), "dd/MM/yyyy")}
                       </TableCell>

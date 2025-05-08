@@ -38,6 +38,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 interface CreateInvoiceModalProps {
   open: boolean;
   onClose: () => void;
@@ -321,7 +328,31 @@ export default function InvoiceCreateModal({
                       <FormItem>
                         <FormLabel>Tipo DTE</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={true} />
+                          <Select
+                            disabled={isLoading}
+                            value={field.value.toString()}
+                            onValueChange={(value) =>
+                              field.onChange(parseInt(value))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione tipo de documento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="33">
+                                33 - Factura Electrónica
+                              </SelectItem>
+                              <SelectItem value="34">
+                                34 - Factura Exenta
+                              </SelectItem>
+                              <SelectItem value="56">
+                                56 - Nota Débito
+                              </SelectItem>
+                              <SelectItem value="61">
+                                61 - Nota Crédito
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
