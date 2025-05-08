@@ -23,6 +23,22 @@ function getEstadoColor(estado: string) {
   }
 }
 
+// Función para obtener el nombre del tipo de DTE
+function getTipoDTEName(tipoDTE: number): string {
+  switch (tipoDTE) {
+    case 33:
+      return "Factura Electrónica";
+    case 34:
+      return "Factura Exenta";
+    case 56:
+      return "Nota Débito";
+    case 61:
+      return "Nota Crédito";
+    default:
+      return `DTE ${tipoDTE}`;
+  }
+}
+
 // Función para crear las columnas de la tabla
 export const columns = (
   onEditar: (factura: Factura) => void,
@@ -32,6 +48,11 @@ export const columns = (
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => <span>#{row.original.id}</span>,
+  },
+  {
+    accessorKey: "tipoDTE",
+    header: "Tipo DTE",
+    cell: ({ row }) => <span>{getTipoDTEName(row.original.tipoDTE)}</span>,
   },
   {
     accessorKey: "fechaEmision",
