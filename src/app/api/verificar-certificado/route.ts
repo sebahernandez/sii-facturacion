@@ -6,6 +6,7 @@ import { tmpdir } from "os";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -79,11 +80,7 @@ export async function POST(req: NextRequest) {
       }
 
       const certificate = certBagArray[0];
-
-      // Verificar que hay una clave privada (solo verificación)
-      if (pkeyBagArray.length === 0) {
-        throw new Error("No se encontró clave privada");
-      }
+      const privateKey = pkeyBagArray[0];
 
       if (!certificate.cert) {
         throw new Error("Certificado inválido");
@@ -99,9 +96,15 @@ export async function POST(req: NextRequest) {
 
       let subject = "Desconocido";
       let issuer = "Desconocido";
+      let rut = "";
 
       try {
         subject = cert.subject.getField("CN")?.value || "Desconocido";
+        // Intentar extraer el RUT del subject
+        const rutMatch = subject.match(/\d{1,2}\.\d{3}\.\d{3}[-‐][\dkK]/);
+        if (rutMatch) {
+          rut = rutMatch[0];
+        }
       } catch {
         console.warn("No se pudo obtener el campo CN del subject");
       }
@@ -115,7 +118,23 @@ export async function POST(req: NextRequest) {
       const validFrom = cert.validity.notBefore;
       const validTo = cert.validity.notAfter;
 
-      // Generar un token para representar la sesión del certificado
+      // Convertir el certificado a PEM para usarlo en solicitudes al SII
+      const certPem = forge.pki.certificateToPem(cert);
+
+      // Obtener la clave privada y convertirla a PEM
+      const keyPem = forge.pki.privateKeyInfoToPem(privateKey.asn1);
+
+      // Encriptar el PEM de la clave privada para guardarla de forma segura
+      // Usamos una clave derivada de la contraseña del usuario + un salt
+      const salt = crypto.randomBytes(16).toString("hex");
+      const key = crypto.scryptSync(password, salt, 32);
+      const iv = crypto.randomBytes(16);
+
+      const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+      let encryptedKeyPem = cipher.update(keyPem, "utf8", "base64");
+      encryptedKeyPem += cipher.final("base64");
+
+      // Generar un token para representar la sesión del certificado con más datos
       const token = Buffer.from(
         JSON.stringify({
           subject,
@@ -123,6 +142,12 @@ export async function POST(req: NextRequest) {
           validFrom: validFrom.toISOString(),
           validTo: validTo.toISOString(),
           timestamp: Date.now(),
+          rut: rut,
+          certPem: certPem,
+          // Guardamos datos de encriptación para poder desencriptar después
+          encryptedKeyPem: encryptedKeyPem,
+          salt: salt,
+          iv: iv.toString("hex"),
         })
       ).toString("base64");
 
@@ -143,11 +168,13 @@ export async function POST(req: NextRequest) {
           issuer,
           validFrom: validFrom.toISOString(),
           validTo: validTo.toISOString(),
+          rut: rut || "No identificado",
         },
       });
-    } catch {
+    } catch (error) {
       // Eliminar el archivo temporal en caso de error
       await fs.unlink(tempFilePath);
+      console.error("Error al procesar el certificado:", error);
       return NextResponse.json(
         { error: "Contraseña incorrecta o certificado inválido" },
         { status: 400 }
