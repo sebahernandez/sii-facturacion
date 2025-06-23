@@ -6,6 +6,7 @@ import {
   deleteFactura,
   updateFactura,
   createFactura,
+  sendFactura,
 } from "@/lib/invoicesServices";
 
 interface InvoiceStore {
@@ -32,6 +33,7 @@ interface InvoiceStore {
     user_id: string;
     detalles: DetalleFacturaSinId[];
   }) => Promise<Factura | null>;
+  enviarFactura: (id: number, password: string) => Promise<boolean>;
   setFacturas: (facturas: Factura[]) => void;
   resetFacturas: () => void;
 }
@@ -125,6 +127,23 @@ const useInvoiceStore = create<InvoiceStore>((set, get) => ({
       console.error(error);
       toast.error("Error al crear factura");
       return null;
+    }
+  },
+
+  enviarFactura: async (id: number, password: string) => {
+    try {
+      await sendFactura(id, password);
+
+      const { resetFacturas, fetchInvoices } = get();
+      resetFacturas();
+      await fetchInvoices();
+
+      toast.success(`Factura #${id} enviada correctamente`);
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al enviar factura");
+      return false;
     }
   },
 

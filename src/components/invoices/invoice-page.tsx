@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ImPlus } from "react-icons/im";
 import InvoiceCreateModal from "@/components/modals/create-invoice-modal";
 import InvoiceEditModal from "@/components/modals/edit-invoice-modal";
+import SendInvoiceModal from "@/components/modals/send-invoice-modal";
 import { Factura } from "@/types/factura";
 import useInvoiceStore from "@/store/invoices.store";
 import { AlertDelete } from "./alert-delete";
@@ -21,6 +22,8 @@ export default function InvoicePage() {
   const [idFacturaEliminar, setIdFacturaEliminar] = useState<number | null>(
     null
   );
+  const [sendOpen, setSendOpen] = useState(false);
+  const [idFacturaEnviar, setIdFacturaEnviar] = useState<number | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,6 +63,11 @@ export default function InvoicePage() {
     setDeleteAlertOpen(true);
   };
 
+  const handleEnviar = (id: number) => {
+    setIdFacturaEnviar(id);
+    setSendOpen(true);
+  };
+
   const confirmarEliminar = async () => {
     if (idFacturaEliminar) {
       try {
@@ -88,6 +96,7 @@ export default function InvoicePage() {
         data={facturas || []}
         onEditar={handleEditar}
         onEliminar={handleEliminar}
+        onEnviar={handleEnviar}
       />
 
       <InvoiceCreateModal
@@ -121,6 +130,12 @@ export default function InvoicePage() {
         }}
         title="¿Eliminar factura?"
         description={`¿Estás seguro de que quieres eliminar la factura #${idFacturaEliminar}? Esta acción no se puede deshacer.`}
+      />
+
+      <SendInvoiceModal
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        facturaId={idFacturaEnviar}
       />
     </div>
   );
