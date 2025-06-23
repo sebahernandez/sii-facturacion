@@ -91,3 +91,23 @@ export const createFactura = async (factura: {
 
   return response.json();
 };
+export const sendFactura = async (
+  id: number,
+  password: string,
+  ambiente: string = "certificacion"
+): Promise<any> => {
+  const response = await fetch("/api/sii/enviar-factura", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id, password, ambiente }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Error HTTP: ${response.status} - ${text}`);
+  }
+
+  return response.json();
+};

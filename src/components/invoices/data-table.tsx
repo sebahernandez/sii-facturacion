@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FiEdit3 } from "react-icons/fi";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdSend } from "react-icons/md";
 import { Factura } from "@/types/factura";
 import { Progress } from "@/components/ui/progress";
 import useInvoiceStore from "@/store/invoices.store";
@@ -38,9 +38,10 @@ interface DataTableProps {
   data: Factura[];
   onEditar: (factura: Factura) => void;
   onEliminar: (id: number) => void;
+  onEnviar: (id: number) => void;
 }
 
-export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
+export function DataTable({ data, onEditar, onEliminar, onEnviar }: DataTableProps) {
   const [filtro, setFiltro] = useState("");
   const { isLoading } = useInvoiceStore();
 
@@ -137,6 +138,14 @@ export function DataTable({ data, onEditar, onEliminar }: DataTableProps) {
                       className="cursor-pointer"
                     >
                       <MdDelete className="mr-1" /> Eliminar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onEnviar(factura.id)}
+                      className="cursor-pointer"
+                    >
+                      <MdSend className="mr-1" /> Enviar
                     </Button>
                   </div>
                 </TableCell>
