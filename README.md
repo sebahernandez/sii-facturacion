@@ -46,3 +46,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 7. Consulte la información del certificado con `GET /api/certificado` para verificar que quedó almacenado correctamente.
 8. Si necesita desvincular el certificado, envíe `DELETE /api/certificado` y repita el proceso con un nuevo archivo.
 
+
+## Factura de prueba en el ambiente de certificación
+
+1. Con el token obtenido, envíe una solicitud `POST /api/sii/factura-prueba` con `{ "password": "<contraseña del certificado>", "ambiente": "certificacion" }`.
+2. El endpoint genera un DTE de ejemplo y lo envía a `https://maullin.sii.cl/cgi_dte/UPL/DTEUpload` usando su certificado digital.
+3. Revise la respuesta para confirmar que la conexión con el SII se realizó correctamente.
+
