@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Conectar certificado digital para el SII
+
+1. Inicie sesión y diríjase a **Configuración** (`/dashboard/configuracion`).
+2. En la sección *Certificado Digital* suba su archivo `.pfx` o `.pem` e introduzca la contraseña.
+3. Presione **Verificar y guardar certificado** para almacenar de forma segura el token del certificado.
+4. Solicite una semilla al SII con `GET /api/sii/semilla` (requiere autenticación).
+5. Luego obtenga el token definitivo mediante `POST /api/sii/token` enviando `{ "password": "<contraseña del certificado>", "ambiente": "certificacion" }`.
+6. Con el token activo la aplicación puede firmar y enviar facturas electrónicas al SII.
+7. Consulte la información del certificado con `GET /api/certificado` para verificar que quedó almacenado correctamente.
+8. Si necesita desvincular el certificado, envíe `DELETE /api/certificado` y repita el proceso con un nuevo archivo.
+
+
+## Factura de prueba en el ambiente de certificación
+
+1. Con el token obtenido, envíe una solicitud `POST /api/sii/factura-prueba` con `{ "password": "<contraseña del certificado>", "ambiente": "certificacion" }`.
+2. El endpoint genera un DTE de ejemplo y lo envía a `https://maullin.sii.cl/cgi_dte/UPL/DTEUpload` usando su certificado digital.
+3. Revise la respuesta para confirmar que la conexión con el SII se realizó correctamente.
+
