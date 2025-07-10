@@ -93,7 +93,6 @@ export const createFactura = async (factura: {
 };
 export const sendFactura = async (
   id: number,
-  password: string,
   ambiente: string = "certificacion"
 ): Promise<any> => {
   const response = await fetch("/api/sii/enviar-factura", {
@@ -101,7 +100,7 @@ export const sendFactura = async (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ id, password, ambiente }),
+    body: JSON.stringify({ id, ambiente }),
   });
 
   if (!response.ok) {

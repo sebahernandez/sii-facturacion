@@ -33,7 +33,7 @@ interface InvoiceStore {
     user_id: string;
     detalles: DetalleFacturaSinId[];
   }) => Promise<Factura | null>;
-  enviarFactura: (id: number, password: string) => Promise<boolean>;
+  enviarFactura: (id: number) => Promise<boolean>;
   setFacturas: (facturas: Factura[]) => void;
   resetFacturas: () => void;
 }
@@ -130,9 +130,9 @@ const useInvoiceStore = create<InvoiceStore>((set, get) => ({
     }
   },
 
-  enviarFactura: async (id: number, password: string) => {
+  enviarFactura: async (id: number) => {
     try {
-      await sendFactura(id, password);
+      await sendFactura(id);
 
       const { resetFacturas, fetchInvoices } = get();
       resetFacturas();
